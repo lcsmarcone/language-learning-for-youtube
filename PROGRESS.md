@@ -4,8 +4,8 @@
 > Leia-o antes de qualquer coisa, continue da primeira etapa não ✅, e atualize-o ao final de cada etapa.
 > Legenda: ⬜ pendente · 🔨 em andamento · ✅ concluída
 
-**Última sessão:** 2026-09-09 — Etapas 0, 1 e 2 concluídas (fundação, modelo de dados, parsers de legenda).
-**Próximo passo:** Etapa 3 — Biblioteca e fluxo "Adicionar vídeo".
+**Última sessão:** 2026-09-09 — Etapas 0 a 3 concluídas (fundação, modelo de dados, parsers, biblioteca + adicionar vídeo).
+**Próximo passo:** Etapa 4 — Tela de estudo: player do YouTube + transcrição sincronizada.
 
 ---
 
@@ -42,12 +42,21 @@
 - Transcrição copiada do YouTube (linhas `0:15` + texto, ou `0:15 texto`) é reconhecida e usa os **tempos reais** — não fica marcada como aproximada.
 - Legenda automática do YouTube em "rolagem" (cada cue repetindo o texto do anterior) é desduplicada; sem isso a transcrição sairia com cada frase duas ou três vezes.
 
-### ⬜ Etapa 3 — Biblioteca e "Adicionar vídeo"
-- [ ] Home: estado vazio + grid de cards (thumbnail, título, duração, % concluído, nº flashcards, última vez estudado)
-- [ ] Modal Adicionar vídeo: URL do YouTube (youtu.be, /watch, /shorts, /embed), metadados via oEmbed, idioma de origem (en/fr/es), destino pt-BR
-- [ ] Legenda: importar arquivo (.srt/.vtt, ≤2 MB) ou colar transcrição; "detectar" desabilitado até a Etapa 10
-- [ ] API routes com validação Zod
-- **Verificação:** adicionar vídeo real com .srt real → aparece na biblioteca → reload → continua lá.
+### ✅ Etapa 3 — Biblioteca e "Adicionar vídeo"
+- [x] Home: estado vazio + seções "Continue estudando"/"Todos os vídeos", cards com thumbnail, idioma, duração, % concluído, nº de flashcards, % traduzido e aviso de sincronia aproximada
+- [x] Modal `AddVideoDialog` com prévia ao vivo do vídeo (título/autor/thumbnail) enquanto se digita, com debounce
+- [x] `lib/youtube.ts`: `extractYouTubeId` (watch, youtu.be, shorts, embed, live, nocookie, music, id puro, parâmetros extras) + `fetchYouTubeMetadata` via **oEmbed** com timeout
+- [x] Legenda: importar arquivo (.srt/.vtt/.txt, ≤2 MB) ou colar transcrição; "detectar" desabilitado com explicação até a Etapa 10
+- [x] `lib/api.ts` (envelope `{ok,data}`/`{ok,error}`, limite de corpo, `handleRoute`), `lib/schemas.ts` (Zod), `services/library.ts` (consultas + criação transacional em lotes de 500)
+- [x] Rotas: `GET/POST /api/videos`, `DELETE /api/videos/[id]`, `GET /api/youtube/metadata`
+- **Verificação:** exercitado de ponta a ponta com vídeos reais do YouTube — criar, duplicar (409), legenda inválida, idioma inválido, remover, 404 — e no navegador: prévia ao vivo, erro de duplicado na tela, criação e reload mantendo os dados.
+
+**Correções feitas a partir dos testes desta etapa:**
+- `.srt`/`.vtt` sem nenhum bloco de tempo agora dá erro explicativo em vez de virar uma "transcrição" de um bloco só.
+- Mensagens do Zod traduzidas (o idioma inválido devolvia texto em inglês).
+- Transcrição com **uma única** marca de tempo que cobre todo o texto passa a usar o tempo real, sem deixar a linha `0:09` virar texto falado. Prosa que menciona um horário continua sendo tratada como prosa.
+
+**Pendência conhecida (resolvida na Etapa 4):** `durationSec` fica nulo ao adicionar, porque o oEmbed não informa duração. O player sabe a duração e vai gravá-la na primeira reprodução.
 
 ### ⬜ Etapa 4 — Tela de estudo: player + transcrição sincronizada
 - [ ] `components/video/YouTubePlayer.tsx` sobre a IFrame API (play/pause/seek/rate/getTime)
@@ -122,3 +131,4 @@
 - **Prisma 7** não embute mais o engine: a conexão exige um driver adapter (`@prisma/adapter-better-sqlite3`), configurado em `lib/db.ts`. A classe exportada chama-se `PrismaBetterSqlite3`.
 - O client Prisma é gerado em `lib/generated/prisma` e **não** é versionado; `postinstall` regenera após clonar.
 - Config do Prisma fica em `prisma7.config.ts` (padrão do Prisma 7), não em `package.json`.
+- `npm run typecheck` roda `next typegen` antes do `tsc`: os tipos de rota (`RouteContext`, `LayoutProps`) são gerados pelo Next e não existem num clone limpo.

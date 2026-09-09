@@ -60,8 +60,21 @@ export function parsePlainTranscript(
 
   const lines = text.split("\n");
 
-  const timed = extractTimedLines(lines);
-  if (timed.length >= 2) {
+  const { entries: timed, consumedLines } = extractTimedLines(lines);
+  const nonEmptyLines = lines.filter((line) => line.trim() !== "").length;
+
+  // Quando tratar como transcrição com tempo:
+  //
+  // - duas ou mais marcas de tempo já são padrão suficiente; ou
+  // - uma única marca, desde que TODAS as linhas do texto estejam sob ela.
+  //
+  // A segunda condição existe para não confundir prosa com legenda: em
+  // "Cheguei às 3:15 e ele já tinha ido", a linha do tempo seria uma no meio de
+  // várias soltas, e aí o texto é tratado como prosa mesmo.
+  const looksTimed =
+    timed.length >= 2 || (timed.length === 1 && consumedLines === nonEmptyLines);
+
+  if (looksTimed) {
     return ok({
       segments: finalizeSegments(closeOpenEnds(timed, options.durationSec)),
       timingsApproximate: false,
@@ -84,11 +97,19 @@ export function parsePlainTranscript(
   });
 }
 
-/** Extrai pares (tempo, texto) das duas formas aceitas de transcrição com tempo. */
-function extractTimedLines(
-  lines: string[],
-): Array<{ startMs: number; text: string }> {
-  const result: Array<{ startMs: number; text: string }> = [];
+/**
+ * Extrai pares (tempo, texto) das duas formas aceitas de transcrição com tempo.
+ *
+ * Devolve também quantas linhas não vazias foram consumidas: é isso que
+ * permite distinguir uma transcrição curta de um texto em prosa que por acaso
+ * menciona um horário.
+ */
+function extractTimedLines(lines: string[]): {
+  entries: Array<{ startMs: number; text: string }>;
+  consumedLines: number;
+} {
+  const entries: Array<{ startMs: number; text: string }> = [];
+  let consumedLines = 0;
 
   for (let i = 0; i < lines.length; i += 1) {
     const line = lines[i];
@@ -99,7 +120,8 @@ function extractTimedLines(
       const startMs = parseTimestamp(inline[1]);
       const body = stripMarkup(inline[2]).trim();
       if (startMs !== null && body.length > 0) {
-        result.push({ startMs, text: body });
+        entries.push({ startMs, text: body });
+        consumedLines += 1;
       }
       continue;
     }
@@ -120,12 +142,16 @@ function extractTimedLines(
       }
 
       const joined = body.join(" ").replace(/\s{2,}/g, " ").trim();
-      if (joined.length > 0) result.push({ startMs, text: joined });
+      if (joined.length > 0) {
+        entries.push({ startMs, text: joined });
+        // A linha do tempo mais as linhas de texto que ela cobre.
+        consumedLines += 1 + body.length;
+      }
       i = cursor - 1;
     }
   }
 
-  return result;
+  return { entries, consumedLines };
 }
 
 /**

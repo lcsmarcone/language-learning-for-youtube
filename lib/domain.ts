@@ -10,12 +10,16 @@ import { z } from "zod";
 
 /** Idiomas de origem suportados no v1 (instrucoes.md, "Idiomas suportados"). */
 export const SOURCE_LANGUAGES = ["en", "fr", "es"] as const;
-export const sourceLanguageSchema = z.enum(SOURCE_LANGUAGES);
+export const sourceLanguageSchema = z.enum(SOURCE_LANGUAGES, {
+  error: "Escolha um idioma de origem: inglês, francês ou espanhol.",
+});
 export type SourceLanguage = z.infer<typeof sourceLanguageSchema>;
 
 /** Idioma de estudo. Fixo no v1, mas já modelado como valor e não como suposição. */
 export const TARGET_LANGUAGES = ["pt-BR"] as const;
-export const targetLanguageSchema = z.enum(TARGET_LANGUAGES);
+export const targetLanguageSchema = z.enum(TARGET_LANGUAGES, {
+  error: "Por enquanto só traduzimos para português do Brasil.",
+});
 export type TargetLanguage = z.infer<typeof targetLanguageSchema>;
 
 export const LANGUAGE_LABELS: Record<

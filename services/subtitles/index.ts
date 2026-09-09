@@ -18,11 +18,14 @@ export interface ParsedSubtitle {
 }
 
 export interface ParseSubtitleOptions {
-  /** Nome do arquivo, quando houver — usado só como pista de formato. */
+  /** Nome do arquivo, quando houver — usado como pista de formato. */
   filename?: string | null;
   /** Duração do vídeo em segundos, quando conhecida. */
   durationSec?: number | null;
 }
+
+/** Extensões que prometem um formato com marcas de tempo. */
+const TIMED_EXTENSIONS = new Set(["srt", "vtt"]);
 
 /**
  * Ponto de entrada único da importação de legendas.
@@ -30,6 +33,11 @@ export interface ParseSubtitleOptions {
  * Detecta o formato pelo conteúdo, não pela extensão: arquivo `.txt` com
  * conteúdo VTT é comum, e `.srt` com ponto no lugar da vírgula também. A
  * extensão só desempata.
+ *
+ * Exceção deliberada: quem envia um `.srt` ou `.vtt` está afirmando que aquilo
+ * é uma legenda com tempos. Se o conteúdo não tem nenhum bloco de tempo, isso
+ * é um erro para mostrar na tela — e não um convite para tratar o arquivo
+ * inteiro como transcrição solta, o que produziria um bloco único sem sentido.
  */
 export function parseSubtitle(
   input: string,
@@ -42,6 +50,13 @@ export function parseSubtitle(
   }
 
   const format = detectFormat(text, options.filename);
+  const extension = options.filename?.toLowerCase().split(".").pop();
+
+  if (format === "transcript" && extension && TIMED_EXTENSIONS.has(extension)) {
+    return err(
+      `O arquivo .${extension} não tem nenhum bloco de legenda com marcação de tempo. Confira se o arquivo está correto ou use a opção "Colar transcrição".`,
+    );
+  }
 
   if (format === "vtt") {
     const parsed = parseVtt(text);

@@ -66,12 +66,30 @@ export const YouTubePlayer = forwardRef<PlayerHandle, YouTubePlayerProps>(
 
     useEffect(() => {
       let cancelled = false;
+      const wrapper = containerRef.current;
+      if (!wrapper) return;
+
+      /**
+       * A API do YouTube **substitui** o elemento que recebe pelo `<iframe>`
+       * do player — ela não o preenche. Se esse elemento fosse renderizado
+       * pelo React, o React tentaria removê-lo depois e quebraria com
+       * "Failed to execute 'removeChild'", porque o nó que ele conhece já não
+       * está mais no documento.
+       *
+       * Por isso o nó entregue ao YouTube é criado aqui, à mão, dentro de um
+       * invólucro que o React controla. O React nunca vê o nó substituído; o
+       * invólucro ele pode remover à vontade, com iframe e tudo dentro.
+       */
+      const host = document.createElement("div");
+      host.style.width = "100%";
+      host.style.height = "100%";
+      wrapper.appendChild(host);
 
       loadYouTubeApi()
         .then((api) => {
-          if (cancelled || !containerRef.current) return;
+          if (cancelled) return;
 
-          playerRef.current = new api.Player(containerRef.current, {
+          playerRef.current = new api.Player(host, {
             videoId,
             playerVars: {
               // `rel: 0` mantém as sugestões do fim dentro do mesmo canal;
@@ -130,6 +148,9 @@ export const YouTubePlayer = forwardRef<PlayerHandle, YouTubePlayerProps>(
         cancelled = true;
         playerRef.current?.destroy();
         playerRef.current = null;
+        // Limpa o que sobrou dentro do invólucro. Seguro porque nada aqui
+        // dentro pertence ao React.
+        wrapper.replaceChildren();
       };
       // Recriar o player só faz sentido se o vídeo mudar.
     }, [videoId, setDuration, setPlaying]);
@@ -204,29 +225,34 @@ export const YouTubePlayer = forwardRef<PlayerHandle, YouTubePlayerProps>(
       [setTime],
     );
 
-    if (error) {
-      return (
-        <div className="flex aspect-video w-full flex-col items-center justify-center gap-3 rounded-lg border border-border bg-bg-subtle p-6 text-center">
-          <AlertTriangle size={20} strokeWidth={1.5} className="text-fg-subtle" />
-          <p className="max-w-sm text-sm leading-relaxed text-fg-muted">
-            {error}
-          </p>
-          <a
-            href={`https://www.youtube.com/watch?v=${videoId}`}
-            target="_blank"
-            rel="noreferrer"
-            className="text-xs text-accent underline underline-offset-2"
-          >
-            Abrir no YouTube
-          </a>
-        </div>
-      );
-    }
-
+    // O invólucro fica sempre montado, mesmo em erro: o iframe do YouTube vive
+    // dentro dele fora do controle do React, e desmontá-lo condicionalmente
+    // reabriria o problema de remoção de nó descrito no efeito acima. O erro
+    // entra como camada por cima.
     return (
-      <div className="aspect-video w-full overflow-hidden rounded-lg bg-black">
-        {/* A API substitui esta div pelo iframe do player. */}
+      <div className="relative aspect-video w-full overflow-hidden rounded-lg bg-black">
         <div ref={containerRef} className="h-full w-full" />
+
+        {error ? (
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 border border-border bg-bg-subtle p-6 text-center">
+            <AlertTriangle
+              size={20}
+              strokeWidth={1.5}
+              className="text-fg-subtle"
+            />
+            <p className="max-w-sm text-sm leading-relaxed text-fg-muted">
+              {error}
+            </p>
+            <a
+              href={`https://www.youtube.com/watch?v=${videoId}`}
+              target="_blank"
+              rel="noreferrer"
+              className="text-xs text-accent underline underline-offset-2"
+            >
+              Abrir no YouTube
+            </a>
+          </div>
+        ) : null}
       </div>
     );
   },

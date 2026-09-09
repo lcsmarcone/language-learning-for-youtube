@@ -9,11 +9,21 @@ import { usePlayerStore } from "@/lib/playerStore";
 import { resolveLoopSeek } from "@/lib/loop";
 import { LANGUAGE_LABELS } from "@/lib/domain";
 import { TranscriptList } from "@/components/subtitles/TranscriptList";
+import { TranslationBar } from "@/components/subtitles/TranslationBar";
 import { PlayerControls } from "./PlayerControls";
 import { YouTubePlayer, type PlayerHandle } from "./YouTubePlayer";
 
 /** De quanto em quanto tempo o progresso é gravado durante a reprodução. */
 const SAVE_INTERVAL_MS = 5000;
+
+interface StudyScreenProps {
+  video: StudyVideo;
+  /**
+   * Se o servidor tem provedor de tradução configurado. Vem do servidor porque
+   * depende de variável de ambiente — que o navegador nunca pode ler.
+   */
+  translationConfigured: boolean;
+}
 
 /**
  * Tela de estudo: vídeo à esquerda, transcrição à direita (instrucoes.md secao 12).
@@ -22,7 +32,7 @@ const SAVE_INTERVAL_MS = 5000;
  * virtualizada — e é aqui que moram as duas regras de comportamento que dão
  * identidade ao produto: o loop de repetição e a gravação de progresso.
  */
-export function StudyScreen({ video }: { video: StudyVideo }) {
+export function StudyScreen({ video, translationConfigured }: StudyScreenProps) {
   const playerRef = useRef<PlayerHandle>(null);
   const durationSecRef = useRef<number | null>(video.durationSec);
 
@@ -245,6 +255,15 @@ export function StudyScreen({ video }: { video: StudyVideo }) {
               Acompanhar vídeo
             </label>
           </div>
+
+          {video.trackId ? (
+            <TranslationBar
+              trackId={video.trackId}
+              segmentCount={video.segments.length}
+              translatedCount={video.translatedCount}
+              translationConfigured={translationConfigured}
+            />
+          ) : null}
 
           <TranscriptList
             segments={video.segments}

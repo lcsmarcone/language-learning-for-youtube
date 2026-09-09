@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { StudyScreen } from "@/components/video/StudyScreen";
 import { getStudyVideo } from "@/services/study";
+import { isTranslationConfigured } from "@/services/translation";
 
 // Depende do banco local e do progresso do usuário: nunca deve vir de cache.
 export const dynamic = "force-dynamic";
@@ -24,7 +25,10 @@ export default async function StudyPage({ params }: PageProps<"/video/[id]">) {
     // Altura travada na janela: a transcrição rola dentro dela, não a página
     // inteira — o vídeo precisa continuar visível enquanto se lê a legenda.
     <main className="flex h-screen min-h-0 flex-col overflow-hidden">
-      <StudyScreen video={video} />
+      <StudyScreen
+        video={video}
+        translationConfigured={isTranslationConfigured()}
+      />
     </main>
   );
 }

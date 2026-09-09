@@ -1,0 +1,280 @@
+// Modelo de dados — ver instrucoes.md secao 10.
+//
+// Banco: SQLite (arquivo local). A escolha e deliberada: zero setup, backup e
+// copiar um arquivo. Trocar para PostgreSQL no futuro = mudar `provider` abaixo
+// e rodar as migrations; nenhum codigo de aplicacao depende do dialeto.
+//
+// SQLite nao tem enums nativos: campos "enumerados" sao String com os valores
+// possiveis documentados no comentario e validados por Zod na borda da API.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../lib/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+/// Usuario. No v1 existe apenas um registro local (singleton), mas todas as
+/// entidades ja penduram nele para que autenticacao e sincronizacao entre
+/// dispositivos entrem depois sem migracao destrutiva (instrucoes.md secao 26).
+model User {
+  id        String   @id @default(cuid())
+  name      String   @default("Eu")
+  createdAt DateTime @default(now())
+
+  videos     Video[]
+  flashcards Flashcard[]
+}
+
+/// Um video adicionado a biblioteca.
+model Video {
+  id     String @id @default(cuid())
+  userId String
+
+  /// "youtube" | "local" — prepara videos locais/audio/podcast sem migracao.
+  sourceType String @default("youtube")
+
+  /// Id no provedor (ex.: id de 11 caracteres do YouTube). Null para arquivo local.
+  externalId String?
+
+  /// URL original informada pelo usuario, ou caminho do arquivo local.
+  url String
+
+  title        String
+  thumbnailUrl String?
+
+  /// Duracao em segundos, quando conhecida (o oEmbed nem sempre informa).
+  durationSec Int?
+
+  /// Idioma falado no video: "en" | "fr" | "es".
+  sourceLang String
+
+  /// Idioma de estudo. No v1 sempre "pt-BR".
+  targetLang String @default("pt-BR")
+
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  lastStudiedAt DateTime?
+
+  user       User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tracks     SubtitleTrack[]
+  highlights Highlight[]
+  flashcards Flashcard[]
+  progress   StudyProgress?
+
+  /// Evita o mesmo video duplicado na biblioteca do usuario.
+  @@unique([userId, sourceType, externalId])
+  @@index([userId, lastStudiedAt])
+}
+
+/// Uma faixa de legenda no idioma original. Um video pode ter mais de uma
+/// (ex.: importada manualmente e depois obtida via yt-dlp); `isPrimary` marca
+/// a que a tela de estudo usa.
+model SubtitleTrack {
+  id      String @id @default(cuid())
+  videoId String
+
+  /// Idioma da faixa — normalmente igual a Video.sourceLang.
+  lang String
+
+  /// Origem: "srt" | "vtt" | "transcript" | "ytdlp".
+  source String
+
+  /// Rotulo exibivel (ex.: nome do arquivo importado).
+  label String?
+
+  isPrimary Boolean @default(true)
+
+  /// true quando os timestamps foram estimados (transcricao colada sem tempos).
+  /// A UI precisa avisar o usuario de que a sincronia e aproximada.
+  timingsApproximate Boolean @default(false)
+
+  createdAt DateTime @default(now())
+
+  video    Video             @relation(fields: [videoId], references: [id], onDelete: Cascade)
+  segments SubtitleSegment[]
+  jobs     TranslationJob[]
+
+  @@index([videoId, isPrimary])
+}
+
+/// Um bloco de legenda com seus tempos. E a unidade central do produto:
+/// navegacao por clique, loop de repeticao, selecao e flashcard partem daqui.
+model SubtitleSegment {
+  id      String @id @default(cuid())
+  trackId String
+
+  /// Posicao na faixa (0-based). Permite navegacao "proximo/anterior" barata.
+  index   Int
+  startMs Int
+  endMs   Int
+  text    String
+
+  track        SubtitleTrack @relation(fields: [trackId], references: [id], onDelete: Cascade)
+  translations Translation[]
+
+  highlightStarts Highlight[] @relation("HighlightStart")
+  highlightEnds   Highlight[] @relation("HighlightEnd")
+
+  @@unique([trackId, index])
+  /// Indice usado pela busca do segmento ativo e pela ordenacao da lista.
+  @@index([trackId, startMs])
+}
+
+/// Traducao de um segmento para um idioma de destino.
+/// Falha e estado de primeira classe: traducao parcial precisa ser exibivel.
+model Translation {
+  id         String @id @default(cuid())
+  segmentId  String
+  targetLang String
+
+  text String?
+
+  /// "OK" | "FAILED"
+  status String @default("OK")
+
+  /// Motivo legivel da falha, quando status = "FAILED".
+  error String?
+
+  provider String
+  model    String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  segment SubtitleSegment @relation(fields: [segmentId], references: [id], onDelete: Cascade)
+
+  @@unique([segmentId, targetLang])
+  @@index([targetLang, status])
+}
+
+/// Cache global de traducoes, independente de video/segmento.
+/// Chave = hash(provider|model|sourceLang|targetLang|texto). Evita pagar duas
+/// vezes pelo mesmo texto — inclusive entre videos diferentes.
+model TranslationCache {
+  id   String @id @default(cuid())
+  hash String @unique
+
+  sourceLang String
+  targetLang String
+  provider   String
+  model      String?
+
+  sourceText String
+  text       String
+
+  hits      Int      @default(0)
+  createdAt DateTime @default(now())
+
+  @@index([sourceLang, targetLang])
+}
+
+/// Uma selecao persistida feita pelo usuario sobre a transcricao.
+/// Guarda offsets de caractere dentro dos segmentos de inicio e fim, o que
+/// permite reconstruir o destaque exato depois (instrucoes.md secao 6).
+/// `quotedText` e denormalizado de proposito: se a faixa mudar, o flashcard
+/// continua legivel.
+model Highlight {
+  id      String @id @default(cuid())
+  videoId String
+
+  startSegmentId String
+  startOffset    Int
+  endSegmentId   String
+  endOffset      Int
+
+  quotedText String
+
+  /// Traducao correspondente no momento da selecao (segmentos inteiros).
+  translatedText String?
+  note           String?
+
+  createdAt DateTime @default(now())
+
+  video        Video           @relation(fields: [videoId], references: [id], onDelete: Cascade)
+  startSegment SubtitleSegment @relation("HighlightStart", fields: [startSegmentId], references: [id], onDelete: Cascade)
+  endSegment   SubtitleSegment @relation("HighlightEnd", fields: [endSegmentId], references: [id], onDelete: Cascade)
+  flashcards   Flashcard[]
+
+  @@index([videoId, createdAt])
+}
+
+/// Flashcard pronto para o Anki. Autossuficiente: nada aqui depende de a
+/// legenda ainda existir, porque o card precisa sobreviver a edicao da faixa.
+model Flashcard {
+  id          String  @id @default(cuid())
+  userId      String
+  videoId     String
+  highlightId String?
+
+  front String
+  back  String
+
+  /// Frase anterior + selecionada + seguinte, para dar contexto ao estudo.
+  contextText String?
+
+  startMs Int
+  endMs   Int
+
+  /// Prepara decks e tags (instrucoes.md secao 26) sem esquema novo.
+  deckName String?
+
+  /// Lista de tags serializada em JSON (SQLite nao tem array nativo).
+  tags String @default("[]")
+
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  exportedAt DateTime?
+
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  video     Video      @relation(fields: [videoId], references: [id], onDelete: Cascade)
+  highlight Highlight? @relation(fields: [highlightId], references: [id], onDelete: SetNull)
+
+  @@index([userId, createdAt])
+  @@index([videoId, createdAt])
+}
+
+/// Onde o usuario parou em cada video. Sem isso, "fechar e reabrir e continuar
+/// exatamente de onde estava" (instrucoes.md secao 23) nao acontece.
+model StudyProgress {
+  id      String @id @default(cuid())
+  videoId String @unique
+
+  lastPositionMs  Int   @default(0)
+  percentComplete Float @default(0)
+
+  /// Segundos efetivamente assistidos — base para historico de estudo futuro.
+  secondsStudied Int @default(0)
+
+  updatedAt DateTime @updatedAt
+
+  video Video @relation(fields: [videoId], references: [id], onDelete: Cascade)
+}
+
+/// Execucao de traducao de uma faixa. Existe para a UI conseguir mostrar
+/// progresso real ("Traduzindo 120/840...") e para impedir disparos concorrentes.
+model TranslationJob {
+  id      String @id @default(cuid())
+  trackId String
+
+  targetLang String
+
+  /// "PENDING" | "RUNNING" | "DONE" | "FAILED"
+  status String @default("PENDING")
+
+  total  Int @default(0)
+  done   Int @default(0)
+  failed Int @default(0)
+
+  error String?
+
+  startedAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  finishedAt DateTime?
+
+  track SubtitleTrack @relation(fields: [trackId], references: [id], onDelete: Cascade)
+
+  @@index([trackId, status])
+}

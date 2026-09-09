@@ -4,8 +4,8 @@
 > Leia-o antes de qualquer coisa, continue da primeira etapa não ✅, e atualize-o ao final de cada etapa.
 > Legenda: ⬜ pendente · 🔨 em andamento · ✅ concluída
 
-**Última sessão:** 2026-09-09 — Etapas 0 a 5 concluídas. Vídeo → legenda → tradução contextual funcionando de ponta a ponta com a API real.
-**Próximo passo:** Etapa 6 — Seleção e destaque de texto.
+**Última sessão:** 2026-09-09 — Etapas 0 a 6 concluídas. Vídeo → legenda → tradução → seleção com destaque cruzado, tudo funcionando e persistindo.
+**Próximo passo:** Etapa 7 — Flashcards (é o que fecha o fluxo do produto).
 
 ---
 
@@ -97,12 +97,17 @@
 
 **Bug real corrigido nesta etapa:** a API do YouTube **substitui** o elemento que recebe pelo `<iframe>`, em vez de preenchê-lo. Como esse elemento era renderizado pelo React, qualquer troca de tela derrubava a aplicação com `Failed to execute 'removeChild' on 'Node'`. Agora o nó entregue ao YouTube é criado à mão dentro de um invólucro que o React controla, e o erro do player virou uma camada sobreposta em vez de trocar a árvore. Descoberto ao abrir um vídeo com reprodução bloqueada pelo dono — que, de quebra, mostrou o estado "vídeo indisponível" funcionando.
 
-### ⬜ Etapa 6 — Seleção e destaque
-- [ ] `lib/selection.ts`: Range ↔ `{startSegmentId, startOffset, endSegmentId, endOffset, quotedText}`
-- [ ] Seleção no original preservada exatamente; tradução destaca o segmento inteiro correspondente (sem inventar alinhamento palavra-a-palavra)
-- [ ] Barra inferior com seleção atual + [★ Criar flashcard] + Esc
-- [ ] Highlights persistem e são re-renderizados ao reabrir
-- **Verificação:** testes de round-trip, incluindo seleção que cruza segmentos.
+### ✅ Etapa 6 — Seleção e destaque
+- [x] `lib/selection.ts`: leitura da seleção do DOM → `{side, startSegmentId, startOffset, endSegmentId, endOffset, quotedText, segmentIds}`, com `textOffsetWithin` que conta deslocamento mesmo com o texto já partido por destaques
+- [x] Seleção no original preservada **exatamente** por deslocamento de caractere; o outro lado destaca o **segmento inteiro** correspondente — sem inventar alinhamento palavra a palavra (instrucoes.md secao 6)
+- [x] Funciona nos dois sentidos: selecionar na tradução destaca o original
+- [x] `lib/selectionStore.ts` (zustand): cada bloco assina só se participa da seleção, para a lista virtualizada não repintar inteira a cada arrasto
+- [x] `SegmentText` + `segmentMarkRanges`/`splitByRanges` (funções puras) renderizam os destaques salvos, inclusive atravessando vários blocos
+- [x] Barra inferior mostrando os dois lados + [Marcar trecho] + [Cancelar] (Esc também limpa)
+- [x] `services/highlights.ts` + `POST/GET /api/videos/[id]/highlights` + `DELETE /api/highlights/[id]`; destaques voltam renderizados ao reabrir o vídeo
+- **Verificação:** 105 testes, incluindo uma suíte em jsdom que monta o mesmo DOM da tela e lê seleções reais (bloco único, cruzando blocos, arrastada de trás para frente, com texto já partido por destaque anterior, misturando os dois lados). No navegador: selecionar no original destacou a tradução inteira, marcar salvou, recarregar manteve a marcação.
+
+**Bug real encontrado testando no navegador:** numa seleção que cruza blocos, `selection.toString()` do navegador traz **a tradução do meio junto** — original e tradução são vizinhos no DOM, então ir do bloco 7 ao 8 arrasta o português do 7 no caminho. Um flashcard nascido daí teria português na frente em inglês. Agora o texto salvo é remontado a partir dos dados e dos deslocamentos, não do que o navegador devolve, e por isso é idêntico ao que será destacado ao reabrir.
 
 ### ⬜ Etapa 7 — Flashcards
 - [ ] Criar da seleção ou do segmento inteiro (front, back, contexto, timestamps, vídeo)

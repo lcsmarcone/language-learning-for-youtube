@@ -5,6 +5,9 @@ import clsx from "clsx";
 import { Play, Repeat } from "lucide-react";
 import type { StudySegment } from "@/lib/domain";
 import { formatTimestamp } from "@/lib/time";
+import { useSelectionStore } from "@/lib/selectionStore";
+import { segmentMarkRanges } from "@/lib/selection";
+import { SegmentText } from "./SegmentText";
 
 interface SegmentRowProps {
   segment: StudySegment;
@@ -44,6 +47,22 @@ export const SegmentRow = memo(function SegmentRow({
   onToggleLoop,
 }: SegmentRowProps) {
   const pressRef = useRef<{ x: number; y: number } | null>(null);
+
+  // Assinaturas estreitas de propósito: cada bloco só quer saber se ele
+  // participa da seleção atual, não qual é a seleção.
+  const inSelection = useSelectionStore((state) =>
+    state.selectedIds.has(segment.id),
+  );
+  const selectionSide = useSelectionStore((state) => state.current?.side ?? null);
+  const highlights = useSelectionStore((state) => state.highlights);
+
+  const markRanges = segmentMarkRanges(segment, highlights);
+
+  // Enquanto o usuário seleciona de um lado, o outro lado inteiro é destacado.
+  // Segmento inteiro, e não recorte: não existe alinhamento palavra a palavra
+  // confiável entre original e tradução (instrucoes.md secao 6).
+  const mirrorOriginal = inSelection && selectionSide === "translation";
+  const mirrorTranslation = inSelection && selectionSide === "original";
 
   function handleMouseDown(event: React.MouseEvent) {
     pressRef.current = { x: event.clientX, y: event.clientY };
@@ -91,17 +110,20 @@ export const SegmentRow = memo(function SegmentRow({
           <p
             data-role="original"
             className={clsx(
-              "text-[15px] leading-relaxed",
-              isActive ? "text-fg" : "text-fg",
+              "text-[15px] leading-relaxed text-fg",
+              mirrorOriginal && "rounded-sm bg-highlight-soft/60",
             )}
           >
-            {segment.text}
+            <SegmentText text={segment.text} ranges={markRanges} />
           </p>
 
           {segment.translatedText ? (
             <p
               data-role="translation"
-              className="mt-1 text-sm leading-relaxed text-fg-muted"
+              className={clsx(
+                "mt-1 text-sm leading-relaxed text-fg-muted",
+                mirrorTranslation && "rounded-sm bg-highlight-soft/60 text-fg",
+              )}
             >
               {segment.translatedText}
             </p>

@@ -1,5 +1,7 @@
 import { db, LOCAL_USER_ID } from "@/lib/db";
 import type { StudySegment, TranslationStatus } from "@/lib/domain";
+import type { StoredHighlight } from "@/lib/selection";
+import { listHighlights } from "@/services/highlights";
 
 /**
  * Leitura da tela de estudo: o vídeo, a faixa principal e todos os segmentos
@@ -24,6 +26,7 @@ export interface StudyVideo {
   segments: StudySegment[];
   lastPositionMs: number;
   translatedCount: number;
+  highlights: StoredHighlight[];
 }
 
 export async function getStudyVideo(
@@ -77,6 +80,8 @@ export async function getStudyVideo(
     };
   });
 
+  const highlights = await listHighlights(video.id);
+
   return {
     id: video.id,
     externalId: video.externalId,
@@ -92,6 +97,7 @@ export async function getStudyVideo(
     translatedCount: studySegments.filter(
       (segment) => segment.translatedText !== null,
     ).length,
+    highlights,
   };
 }
 

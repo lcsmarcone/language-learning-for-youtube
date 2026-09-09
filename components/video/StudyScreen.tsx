@@ -10,6 +10,9 @@ import { resolveLoopSeek } from "@/lib/loop";
 import { LANGUAGE_LABELS } from "@/lib/domain";
 import { TranscriptList } from "@/components/subtitles/TranscriptList";
 import { TranslationBar } from "@/components/subtitles/TranslationBar";
+import { SelectionBar } from "@/components/highlights/SelectionBar";
+import { useSelectionCapture } from "@/components/highlights/useSelectionCapture";
+import { useSelectionStore } from "@/lib/selectionStore";
 import { PlayerControls } from "./PlayerControls";
 import { YouTubePlayer, type PlayerHandle } from "./YouTubePlayer";
 
@@ -42,6 +45,22 @@ export function StudyScreen({ video, translationConfigured }: StudyScreenProps) 
   const toggleSegmentLoop = usePlayerStore((state) => state.toggleSegmentLoop);
   const followVideo = usePlayerStore((state) => state.followVideo);
   const setFollowVideo = usePlayerStore((state) => state.setFollowVideo);
+
+  useSelectionCapture(video.segments);
+
+  const setHighlights = useSelectionStore((state) => state.setHighlights);
+
+  // Destaques salvos entram no store para os blocos renderizarem as marcações.
+  useEffect(() => {
+    setHighlights(video.highlights);
+    return () => {
+      useSelectionStore.setState({
+        current: null,
+        selectedIds: new Set(),
+        highlights: [],
+      });
+    };
+  }, [video.highlights, setHighlights]);
 
   // Carrega os segmentos no store e limpa o estado ao sair, para o próximo
   // vídeo não herdar destaque nem loop deste.
@@ -273,6 +292,8 @@ export function StudyScreen({ video, translationConfigured }: StudyScreenProps) 
           />
         </section>
       </div>
+
+      <SelectionBar videoId={video.id} segments={video.segments} />
     </div>
   );
 }

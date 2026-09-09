@@ -4,8 +4,8 @@
 > Leia-o antes de qualquer coisa, continue da primeira etapa não ✅, e atualize-o ao final de cada etapa.
 > Legenda: ⬜ pendente · 🔨 em andamento · ✅ concluída
 
-**Última sessão:** 2026-09-09 — Etapas 0 a 4 concluídas. A tela de estudo já funciona: player, sincronia, clique-para-navegar, loop e progresso persistido.
-**Próximo passo:** Etapa 5 — Camada de tradução (Anthropic, contextual em blocos, com cache).
+**Última sessão:** 2026-09-09 — Etapas 0 a 5 concluídas. Vídeo → legenda → tradução contextual funcionando de ponta a ponta com a API real.
+**Próximo passo:** Etapa 6 — Seleção e destaque de texto.
 
 ---
 
@@ -77,13 +77,25 @@
 **Nota de ambiente:** em perfil novo do Chrome, a política de autoplay bloqueia o `playVideo()` até o navegador acumular interação — não é falha do app; basta o usuário clicar uma vez.
 **Ferramenta de depuração:** em desenvolvimento, o store fica em `window.__playerStore` (tempo, segmento ativo, loop) — foi assim que os dois problemas acima foram diagnosticados.
 
-### ⬜ Etapa 5 — Camada de tradução
-- [ ] `TranslationProvider` (interface) + `AnthropicProvider` + `MockProvider`
-- [ ] Blocos de ~20 segmentos com 2 de contexto antes/depois; saída JSON `[{id,text}]` validada por Zod; 2 retentativas
-- [ ] Cache por hash(`provider|model|sourceLang|targetLang|texto`)
-- [ ] `POST /api/translate/:trackId` (job) + `GET` (progresso `{done,total,failed}`) + rate limit por track
-- [ ] UI de progresso; blocos falhos com "tentar novamente"
-- **Verificação:** testes com MockProvider (chunking, mapeamento de ids, cache hit) + tradução real conferida.
+### ✅ Etapa 5 — Camada de tradução
+- [x] `services/translation/`: `types.ts` (interface `TranslationProvider`), `anthropic.ts`, `mock.ts`, `cache.ts`, `chunk.ts`, `job.ts`, `index.ts`
+- [x] Blocos de 20 segmentos com 2 frases de contexto antes/depois (contexto **não** é traduzido de volta)
+- [x] **Saída estruturada** (`output_config.format` com schema Zod, via `client.messages.parse`) — o modelo é obrigado a devolver um item por segmento com o id de volta, e o resultado ainda é realinhado por id antes de gravar
+- [x] 3 tentativas por bloco com espera crescente; erro definitivo (chave inválida) não é repetido
+- [x] Cache por hash(`provider|model|sourceLang|targetLang|texto`), global entre vídeos
+- [x] `POST /api/translate/[trackId]` (dispara e responde 202) + `GET` (progresso); um trabalho por faixa, sem disparo duplicado
+- [x] `TranslationBar` com progresso ao vivo, retomada se a página for reaberta durante a tradução, e "Traduzir o que falta" quando há falhas
+- [x] Chave lida só no servidor; a UI recebe apenas um booleano dizendo se há provedor configurado
+- **Verificação com a API real (Claude Sonnet 5), nos três idiomas:** espanhol 6 segmentos em 8,0 s, francês 5 em 4,7 s, inglês 5 em 3,1 s — zero falhas. **Cache:** repetir o mesmo texto levou 0,6 s e não criou nenhuma entrada nova, ou seja, nenhuma chamada paga. No navegador: botão → barra de progresso → traduções aparecendo na transcrição.
+
+**Qualidade conferida à mão** (o ponto do produto, instrucoes.md secao 5 — tradução natural, não literal):
+- `Me dejaron colgado` → "Me deixaram na mão"
+- `No te rayes, hombre` → "Não se estressa, cara"
+- `Il m'a envoyé balader` → "Ele me mandou passear"
+- `pero es que yo pensaba que esta vez sí...` → "mas eu achava que dessa vez ia dar certo..." (o sentido elidido foi completado pelo contexto)
+- `I have been putting up with this for years` → "eu venho aguentando isso há anos"
+
+**Bug real corrigido nesta etapa:** a API do YouTube **substitui** o elemento que recebe pelo `<iframe>`, em vez de preenchê-lo. Como esse elemento era renderizado pelo React, qualquer troca de tela derrubava a aplicação com `Failed to execute 'removeChild' on 'Node'`. Agora o nó entregue ao YouTube é criado à mão dentro de um invólucro que o React controla, e o erro do player virou uma camada sobreposta em vez de trocar a árvore. Descoberto ao abrir um vídeo com reprodução bloqueada pelo dono — que, de quebra, mostrou o estado "vídeo indisponível" funcionando.
 
 ### ⬜ Etapa 6 — Seleção e destaque
 - [ ] `lib/selection.ts`: Range ↔ `{startSegmentId, startOffset, endSegmentId, endOffset, quotedText}`

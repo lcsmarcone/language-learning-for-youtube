@@ -27,6 +27,32 @@ describe("parsePlainTranscript", () => {
     expect(parsed.segments[1].text).toBe("in front of the elephants");
   });
 
+  it("aceita uma única marca de tempo quando ela cobre todo o texto", () => {
+    const parsed = expectOk(
+      parsePlainTranscript("0:09\nnever gonna give you up"),
+    );
+
+    expect(parsed.timingsApproximate).toBe(false);
+    expect(parsed.segments).toHaveLength(1);
+    expect(parsed.segments[0].startMs).toBe(9000);
+    // A linha do tempo não pode virar texto falado.
+    expect(parsed.segments[0].text).toBe("never gonna give you up");
+  });
+
+  it("não confunde prosa que menciona um horário com transcrição", () => {
+    const input = [
+      "Cheguei em casa cansado.",
+      "3:15 e ele já tinha ido embora",
+      "No dia seguinte tudo mudou.",
+    ].join("\n");
+
+    const parsed = expectOk(parsePlainTranscript(input));
+
+    expect(parsed.timingsApproximate).toBe(true);
+    expect(parsed.segments).toHaveLength(3);
+    expect(parsed.segments[1].text).toBe("3:15 e ele já tinha ido embora");
+  });
+
   it("aceita tempo e texto na mesma linha", () => {
     const input = ["0:00 All right, so here we are", "0:04 in front of the elephants"].join("\n");
 
@@ -128,5 +154,35 @@ describe("parseSubtitle", () => {
     const result = parseSubtitle("   ");
     expect(result.ok).toBe(false);
     if (!result.ok) expect(result.reason).toMatch(/vazio/i);
+  });
+});
+
+describe("parseSubtitle — coerência com a extensão do arquivo", () => {
+  it("recusa .srt sem nenhum bloco de tempo em vez de tratar como transcrição", () => {
+    const result = parseSubtitle("isso não é uma legenda", {
+      filename: "aula.srt",
+    });
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.reason).toMatch(/marcação de tempo/i);
+  });
+
+  it("recusa .vtt sem blocos de tempo", () => {
+    const result = parseSubtitle("texto solto", { filename: "aula.vtt" });
+    expect(result.ok).toBe(false);
+  });
+
+  it("aceita .txt com transcrição solta", () => {
+    const result = parseSubtitle("Primeira frase. Segunda frase.", {
+      filename: "aula.txt",
+    });
+
+    expect(result.ok).toBe(true);
+    if (result.ok) expect(result.value.source).toBe("transcript");
+  });
+
+  it("aceita transcrição colada sem nome de arquivo", () => {
+    const result = parseSubtitle("Primeira frase. Segunda frase.");
+    expect(result.ok).toBe(true);
   });
 });

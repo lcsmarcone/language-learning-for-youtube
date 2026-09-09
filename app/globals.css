@@ -1,0 +1,156 @@
+@import "tailwindcss";
+
+/* ---------------------------------------------------------------
+   Tokens de design.
+   Poucas cores, muito espaço, tipografia clara (instrucoes.md §11).
+   Uma única cor de acento; o resto é escala de cinza neutra.
+   --------------------------------------------------------------- */
+
+:root {
+  --bg: #ffffff;
+  --bg-subtle: #fafafa;
+  --bg-elevated: #ffffff;
+  --bg-hover: #f4f4f5;
+  --bg-active: #eeeef0;
+
+  --fg: #18181b;
+  --fg-muted: #71717a;
+  --fg-subtle: #a1a1aa;
+
+  --border: #e4e4e7;
+  --border-strong: #d4d4d8;
+
+  --accent: #2563eb;
+  --accent-fg: #ffffff;
+  --accent-subtle: #eff4ff;
+
+  --highlight: #fde68a;
+  --highlight-soft: #fef3c7;
+
+  --danger: #dc2626;
+  --success: #16a34a;
+
+  --radius: 0.5rem;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #09090b;
+    --bg-subtle: #0c0c0f;
+    --bg-elevated: #131316;
+    --bg-hover: #1b1b1f;
+    --bg-active: #232328;
+
+    --fg: #f4f4f5;
+    --fg-muted: #a1a1aa;
+    --fg-subtle: #71717a;
+
+    --border: #26262b;
+    --border-strong: #35353c;
+
+    --accent: #60a5fa;
+    --accent-fg: #09090b;
+    --accent-subtle: #16233d;
+
+    --highlight: #a16207;
+    --highlight-soft: #52400c;
+
+    --danger: #f87171;
+    --success: #4ade80;
+  }
+}
+
+:root[data-theme="dark"] {
+  --bg: #09090b;
+  --bg-subtle: #0c0c0f;
+  --bg-elevated: #131316;
+  --bg-hover: #1b1b1f;
+  --bg-active: #232328;
+
+  --fg: #f4f4f5;
+  --fg-muted: #a1a1aa;
+  --fg-subtle: #71717a;
+
+  --border: #26262b;
+  --border-strong: #35353c;
+
+  --accent: #60a5fa;
+  --accent-fg: #09090b;
+  --accent-subtle: #16233d;
+
+  --highlight: #a16207;
+  --highlight-soft: #52400c;
+
+  --danger: #f87171;
+  --success: #4ade80;
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-bg-subtle: var(--bg-subtle);
+  --color-bg-elevated: var(--bg-elevated);
+  --color-bg-hover: var(--bg-hover);
+  --color-bg-active: var(--bg-active);
+
+  --color-fg: var(--fg);
+  --color-fg-muted: var(--fg-muted);
+  --color-fg-subtle: var(--fg-subtle);
+
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+
+  --color-accent: var(--accent);
+  --color-accent-fg: var(--accent-fg);
+  --color-accent-subtle: var(--accent-subtle);
+
+  --color-highlight: var(--highlight);
+  --color-highlight-soft: var(--highlight-soft);
+
+  --color-danger: var(--danger);
+  --color-success: var(--success);
+
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-mono-stack), ui-monospace, SFMono-Regular, monospace;
+
+  --radius-base: var(--radius);
+}
+
+html {
+  color-scheme: light;
+}
+:root[data-theme="dark"],
+html:has(:root[data-theme="dark"]) {
+  color-scheme: dark;
+}
+@media (prefers-color-scheme: dark) {
+  html:not([data-theme="light"]) {
+    color-scheme: dark;
+  }
+}
+
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* Foco visível e consistente — acessibilidade sem ruído visual. */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 3px;
+}
+
+/* Scrollbar discreta na transcrição e listas longas. */
+.scroll-thin {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-strong) transparent;
+}
+
+/* Evita que o texto do usuário seja "engolido" ao selecionar entre blocos. */
+::selection {
+  background: var(--accent-subtle);
+  color: var(--fg);
+}

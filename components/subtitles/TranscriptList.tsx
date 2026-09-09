@@ -12,6 +12,7 @@ interface TranscriptListProps {
   onSeek: (segment: StudySegment) => void;
   onPlay: (segment: StudySegment) => void;
   onToggleLoop: (segment: StudySegment) => void;
+  onCreateFlashcard: (segment: StudySegment) => void;
 }
 
 /**
@@ -30,6 +31,7 @@ export function TranscriptList({
   onSeek,
   onPlay,
   onToggleLoop,
+  onCreateFlashcard,
 }: TranscriptListProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -154,6 +156,7 @@ export function TranscriptList({
                   onSeek={onSeek}
                   onPlay={onPlay}
                   onToggleLoop={onToggleLoop}
+                  onCreateFlashcard={onCreateFlashcard}
                 />
               </div>
             );

@@ -4,8 +4,8 @@
 > Leia-o antes de qualquer coisa, continue da primeira etapa não ✅, e atualize-o ao final de cada etapa.
 > Legenda: ⬜ pendente · 🔨 em andamento · ✅ concluída
 
-**Última sessão:** 2026-09-09 — Etapas 0 a 6 concluídas. Vídeo → legenda → tradução → seleção com destaque cruzado, tudo funcionando e persistindo.
-**Próximo passo:** Etapa 7 — Flashcards (é o que fecha o fluxo do produto).
+**Última sessão:** 2026-09-09 — Etapas 0 a 7 concluídas. **O fluxo do produto está fechado:** vídeo → legenda → tradução → seleção → flashcard → copiar para o Anki, sobrevivendo a recarregar a página.
+**Próximo passo:** Etapa 8 — Exportação em lote (TSV/CSV).
 
 ---
 
@@ -109,12 +109,19 @@
 
 **Bug real encontrado testando no navegador:** numa seleção que cruza blocos, `selection.toString()` do navegador traz **a tradução do meio junto** — original e tradução são vizinhos no DOM, então ir do bloco 7 ao 8 arrasta o português do 7 no caminho. Um flashcard nascido daí teria português na frente em inglês. Agora o texto salvo é remontado a partir dos dados e dos deslocamentos, não do que o navegador devolve, e por isso é idêntico ao que será destacado ao reabrir.
 
-### ⬜ Etapa 7 — Flashcards
-- [ ] Criar da seleção ou do segmento inteiro (front, back, contexto, timestamps, vídeo)
-- [ ] Página `/flashcards` com filtro por vídeo e busca
-- [ ] [Copiar Original] [Copiar Tradução] [Copiar Frente+Verso (`Original\tTradução`)] [Ir para o vídeo] [Editar] [Excluir] + toast
-- [ ] "Ir para o vídeo" → `/video/[id]?t=<startMs>`
-- **Verificação:** passos 9–12 do §25 de `instrucoes.md`.
+### ✅ Etapa 7 — Flashcards
+- [x] `services/flashcards.ts`: cria a partir da seleção **ou** do bloco inteiro; o servidor deriva frente, verso, contexto e tempos do banco — o cliente só manda onde a seleção começa e termina
+- [x] A frente é **sempre** o idioma original e o verso sempre o português, independentemente de qual lado foi selecionado (é assim que o card funciona no Anki)
+- [x] O lado selecionado é recortado pelos deslocamentos; o outro lado entra com os segmentos inteiros
+- [x] Contexto = frase anterior + selecionada + seguinte
+- [x] `★` na linha da legenda cria o card com um clique; a barra de seleção tem [Criar flashcard] e [Marcar]
+- [x] Página `/flashcards` com busca e filtro por vídeo (no cliente, para digitar ser instantâneo)
+- [x] [Original] [Tradução] [Frente + verso] (`Original\tTradução`) [Ir para o vídeo] [Editar] [Excluir], com toast de confirmação
+- [x] `lib/clipboard.ts` com caminho alternativo quando a API moderna é bloqueada; TAB e quebra de linha viram espaço para não desalinhar a importação
+- [x] "Ir para o vídeo" → `/video/[id]?t=<startMs>`, e o player abre naquele instante
+- **Verificação no navegador:** `★` criou o card com contexto correto; seleção parcial criou card com a frente recortada e o verso inteiro; a página listou os dois; copiar mostrou o ícone de confirmado e o toast; "Ir para o vídeo" abriu o player em 00:14 com o bloco certo ativo. 118 testes, incluindo os recortes de frente/verso, a inversão de lados e o escape do formato do Anki.
+
+**Nota de verificação:** não consegui ler o conteúdo do clipboard pelo navegador automatizado (a leitura abre um pedido de permissão que trava a página). O formato copiado é coberto por teste unitário (`frontBackLine`), e o retorno visual do clique foi conferido na tela.
 
 ### ⬜ Etapa 8 — Exportação
 - [ ] `services/export/`: `toTsv`, `toCsv` com escaping correto; colunas `Front | Back | Source | Timestamp`

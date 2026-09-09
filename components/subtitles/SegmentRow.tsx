@@ -2,7 +2,7 @@
 
 import { memo, useRef } from "react";
 import clsx from "clsx";
-import { Play, Repeat } from "lucide-react";
+import { Play, Repeat, Star } from "lucide-react";
 import type { StudySegment } from "@/lib/domain";
 import { formatTimestamp } from "@/lib/time";
 import { useSelectionStore } from "@/lib/selectionStore";
@@ -16,6 +16,7 @@ interface SegmentRowProps {
   onSeek: (segment: StudySegment) => void;
   onPlay: (segment: StudySegment) => void;
   onToggleLoop: (segment: StudySegment) => void;
+  onCreateFlashcard: (segment: StudySegment) => void;
 }
 
 /** Distância em pixels a partir da qual um clique vira arrasto (seleção). */
@@ -45,6 +46,7 @@ export const SegmentRow = memo(function SegmentRow({
   onSeek,
   onPlay,
   onToggleLoop,
+  onCreateFlashcard,
 }: SegmentRowProps) {
   const pressRef = useRef<{ x: number; y: number } | null>(null);
 
@@ -156,6 +158,12 @@ export const SegmentRow = memo(function SegmentRow({
             onClick={() => onToggleLoop(segment)}
           >
             <Repeat size={13} strokeWidth={1.75} />
+          </IconAction>
+          <IconAction
+            label="Criar flashcard desta frase"
+            onClick={() => onCreateFlashcard(segment)}
+          >
+            <Star size={13} strokeWidth={1.75} />
           </IconAction>
         </div>
       </div>

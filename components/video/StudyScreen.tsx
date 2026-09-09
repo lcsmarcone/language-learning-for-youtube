@@ -13,6 +13,7 @@ import { TranslationBar } from "@/components/subtitles/TranslationBar";
 import { SelectionBar } from "@/components/highlights/SelectionBar";
 import { useSelectionCapture } from "@/components/highlights/useSelectionCapture";
 import { useSelectionStore } from "@/lib/selectionStore";
+import { useToast } from "@/components/ui/Toast";
 import { PlayerControls } from "./PlayerControls";
 import { YouTubePlayer, type PlayerHandle } from "./YouTubePlayer";
 
@@ -21,6 +22,8 @@ const SAVE_INTERVAL_MS = 5000;
 
 interface StudyScreenProps {
   video: StudyVideo;
+  /** Instante inicial vindo de `?t=` — usado ao voltar de um flashcard. */
+  startAtMs?: number;
   /**
    * Se o servidor tem provedor de tradução configurado. Vem do servidor porque
    * depende de variável de ambiente — que o navegador nunca pode ler.
@@ -35,7 +38,12 @@ interface StudyScreenProps {
  * virtualizada — e é aqui que moram as duas regras de comportamento que dão
  * identidade ao produto: o loop de repetição e a gravação de progresso.
  */
-export function StudyScreen({ video, translationConfigured }: StudyScreenProps) {
+export function StudyScreen({
+  video,
+  translationConfigured,
+  startAtMs,
+}: StudyScreenProps) {
+  const showToast = useToast((state) => state.show);
   const playerRef = useRef<PlayerHandle>(null);
   const durationSecRef = useRef<number | null>(video.durationSec);
 
@@ -187,6 +195,38 @@ export function StudyScreen({ video, translationConfigured }: StudyScreenProps) 
     playerRef.current?.seekToMs(state.segments[index].startMs, { play: true });
   }, []);
 
+  /**
+   * Estrela do bloco: cria o card com a frase inteira, sem exigir seleção.
+   * É o caminho de um clique só — o mais usado enquanto se assiste.
+   */
+  const handleCreateFlashcard = useCallback(
+    async (segment: StudySegment) => {
+      try {
+        const response = await fetch("/api/flashcards", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            videoId: video.id,
+            startSegmentId: segment.id,
+            startOffset: 0,
+            endSegmentId: segment.id,
+            endOffset: segment.text.length,
+            side: "original",
+          }),
+        });
+        const payload = await response.json();
+        if (!payload.ok) {
+          showToast(payload.error, "error");
+          return;
+        }
+        showToast("Flashcard criado");
+      } catch {
+        showToast("Não foi possível criar o flashcard", "error");
+      }
+    },
+    [video.id, showToast],
+  );
+
   const handleRateChange = useCallback(
     (rate: number) => {
       playerRef.current?.setRate(rate);
@@ -222,7 +262,7 @@ export function StudyScreen({ video, translationConfigured }: StudyScreenProps) 
             <YouTubePlayer
               ref={playerRef}
               videoId={video.externalId}
-              startAtMs={video.lastPositionMs}
+              startAtMs={startAtMs ?? video.lastPositionMs}
               onDurationKnown={(durationSec) => {
                 durationSecRef.current = durationSec;
               }}
@@ -289,6 +329,7 @@ export function StudyScreen({ video, translationConfigured }: StudyScreenProps) 
             onSeek={handleSeek}
             onPlay={handlePlaySegment}
             onToggleLoop={handleToggleLoop}
+            onCreateFlashcard={handleCreateFlashcard}
           />
         </section>
       </div>

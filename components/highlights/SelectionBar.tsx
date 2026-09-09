@@ -1,9 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { Highlighter, X } from "lucide-react";
+import { Highlighter, Star, X } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { useSelectionStore } from "@/lib/selectionStore";
+import { useToast } from "@/components/ui/Toast";
 import type { StudySegment } from "@/lib/domain";
 
 interface SelectionBarProps {
@@ -22,6 +23,7 @@ export function SelectionBar({ videoId, segments }: SelectionBarProps) {
   const selection = useSelectionStore((state) => state.current);
   const clear = useSelectionStore((state) => state.clear);
   const addHighlight = useSelectionStore((state) => state.addHighlight);
+  const showToast = useToast((state) => state.show);
 
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -42,6 +44,42 @@ export function SelectionBar({ videoId, segments }: SelectionBarProps) {
           .filter((text): text is string => Boolean(text))
           .join(" ")
       : touched.map((segment) => segment.text).join(" ");
+
+  async function handleCreateFlashcard() {
+    if (!selection) return;
+
+    setSaving(true);
+    setError(null);
+
+    try {
+      const response = await fetch("/api/flashcards", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          videoId,
+          startSegmentId: selection.startSegmentId,
+          startOffset: selection.startOffset,
+          endSegmentId: selection.endSegmentId,
+          endOffset: selection.endOffset,
+          side: selection.side,
+        }),
+      });
+
+      const payload = await response.json();
+      if (!payload.ok) {
+        setError(payload.error);
+        return;
+      }
+
+      showToast("Flashcard criado");
+      window.getSelection()?.removeAllRanges();
+      clear();
+    } catch {
+      setError("Não foi possível criar o flashcard agora.");
+    } finally {
+      setSaving(false);
+    }
+  }
 
   async function handleSave() {
     if (!selection) return;
@@ -108,11 +146,20 @@ export function SelectionBar({ videoId, segments }: SelectionBarProps) {
           <Button
             variant="primary"
             size="sm"
-            onClick={handleSave}
+            onClick={handleCreateFlashcard}
             disabled={saving}
           >
+            <Star size={13} strokeWidth={1.75} />
+            Criar flashcard
+          </Button>
+          <Button
+            size="sm"
+            onClick={handleSave}
+            disabled={saving}
+            title="Guardar o trecho destacado sem criar um card"
+          >
             <Highlighter size={13} strokeWidth={1.75} />
-            {saving ? "Marcando…" : "Marcar trecho"}
+            Marcar
           </Button>
           <Button
             variant="ghost"

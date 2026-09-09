@@ -7,6 +7,18 @@ import { isTranslationConfigured } from "@/services/translation";
 // Depende do banco local e do progresso do usuário: nunca deve vir de cache.
 export const dynamic = "force-dynamic";
 
+/**
+ * `?t=` é como um flashcard devolve o usuário ao ponto exato do vídeo
+ * (instrucoes.md secao 7). Valor inválido é ignorado em silêncio: não é motivo
+ * para quebrar a tela.
+ */
+function parseStartAt(value: string | string[] | undefined): number | undefined {
+  const raw = Array.isArray(value) ? value[0] : value;
+  if (!raw) return undefined;
+  const ms = Number(raw);
+  return Number.isFinite(ms) && ms >= 0 ? Math.round(ms) : undefined;
+}
+
 export async function generateMetadata({
   params,
 }: PageProps<"/video/[id]">): Promise<Metadata> {
@@ -15,8 +27,12 @@ export async function generateMetadata({
   return { title: video ? `${video.title} — Estudo por vídeo` : "Vídeo" };
 }
 
-export default async function StudyPage({ params }: PageProps<"/video/[id]">) {
+export default async function StudyPage({
+  params,
+  searchParams,
+}: PageProps<"/video/[id]">) {
   const { id } = await params;
+  const query = await searchParams;
   const video = await getStudyVideo(id);
 
   if (!video) notFound();
@@ -28,6 +44,7 @@ export default async function StudyPage({ params }: PageProps<"/video/[id]">) {
       <StudyScreen
         video={video}
         translationConfigured={isTranslationConfigured()}
+        startAtMs={parseStartAt(query.t)}
       />
     </main>
   );

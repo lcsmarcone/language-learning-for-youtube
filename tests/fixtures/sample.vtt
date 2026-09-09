@@ -1,0 +1,26 @@
+WEBVTT
+Kind: captions
+Language: en
+
+NOTE
+Este bloco é um comentário e não deve virar legenda.
+Nem esta linha.
+
+STYLE
+::cue {
+  color: white;
+}
+
+intro
+00:00:01.000 --> 00:00:03.500 align:start position:10%
+All right, so here we are.
+
+00:00:03.500 --> 00:00:06.000
+In front of the <c.colorE5E5E5>elephants</c>.
+
+00:00:06.000 --> 00:00:09.200
+<00:00:06.500>The cool thing about these guys
+is that they have really long trunks.
+
+00:00:09.200 --> 00:00:11.000
+Jack &amp; Jill said &quot;hi&quot;.

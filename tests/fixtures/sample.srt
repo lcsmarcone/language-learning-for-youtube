@@ -1,0 +1,16 @@
+﻿1
+00:00:01,000 --> 00:00:03,500
+All right, so here we are.
+
+2
+00:00:03,500 --> 00:00:06,000
+In front of the <i>elephants</i>.
+
+3
+00:00:06,000 --> 00:00:09,200
+{\an8}The cool thing about these guys
+is that they have really long trunks.
+
+4
+00:00:09,200 --> 00:00:11,000
+Jack &amp; Jill said "hi".

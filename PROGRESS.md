@@ -4,8 +4,8 @@
 > Leia-o antes de qualquer coisa, continue da primeira etapa não ✅, e atualize-o ao final de cada etapa.
 > Legenda: ⬜ pendente · 🔨 em andamento · ✅ concluída
 
-**Última sessão:** 2026-09-09 — Etapa 0 concluída (scaffold, dependências, tema, mecanismo de retomada).
-**Próximo passo:** Etapa 1 — Modelo de dados (Prisma + SQLite).
+**Última sessão:** 2026-09-09 — Etapas 0 e 1 concluídas (fundação + modelo de dados no SQLite).
+**Próximo passo:** Etapa 2 — Parsers de legenda (SRT, VTT, transcrição colada), com testes.
 
 ---
 
@@ -21,12 +21,14 @@
 - [x] Scripts npm: dev, build, typecheck, test, db:push, db:studio, db:seed
 - **Verificação:** `npm run dev` sobe e mostra a home estilizada; `npm run typecheck` e `npm test` passam.
 
-### ⬜ Etapa 1 — Modelo de dados
-- [ ] `prisma/schema.prisma`: User, Video, SubtitleTrack, SubtitleSegment, Translation, TranslationCache, Highlight, Flashcard, StudyProgress
-- [ ] Índices: `SubtitleSegment(trackId, startMs)` e `(trackId, index)`; únicos em `Translation(segmentId, targetLang)` e `TranslationCache(hash)`
-- [ ] Migration inicial + `lib/db.ts` (singleton Prisma)
-- [ ] `prisma/seed.ts` com um vídeo de exemplo e ~10 segmentos
-- **Verificação:** `npm run db:studio` mostra o seed; teste de smoke lê o vídeo.
+### ✅ Etapa 1 — Modelo de dados
+- [x] `prisma/schema.prisma`: User, Video, SubtitleTrack, SubtitleSegment, Translation, TranslationCache, Highlight, Flashcard, StudyProgress, **TranslationJob**
+- [x] Índices: `SubtitleSegment(trackId, startMs)` e único `(trackId, index)`; únicos em `Translation(segmentId, targetLang)`, `TranslationCache(hash)`, `Video(userId, sourceType, externalId)`
+- [x] Migration inicial (`prisma/migrations/…_inicial`) + `lib/db.ts` (singleton + adapter better-sqlite3 + `ensureLocalUser`)
+- [x] `lib/domain.ts` (enums validados por Zod, rótulos de idioma, tipos `NormalizedSegment`/`StudySegment`) e `lib/time.ts` (formatação de timestamp/duração)
+- [x] `prisma/seed.ts` idempotente: 1 vídeo, 10 segmentos, traduções e progresso
+- [x] `postinstall: prisma generate` (o client gerado não é versionado)
+- **Verificação:** `npm run db:seed` popula; `tests/db.test.ts` cobre o fluxo vídeo→legenda→tradução→highlight→flashcard, o unique de duplicidade e o cascade de exclusão. `npm run build` passa.
 
 ### ⬜ Etapa 2 — Parsers de legenda
 - [ ] `services/subtitles/parseSrt.ts`, `parseVtt.ts`, `parsePlainTranscript.ts`, `normalize.ts`
@@ -110,4 +112,7 @@
 ## Notas / pendências conhecidas
 
 - `npm audit` acusa vulnerabilidades em `mysql2`, dependência transitiva do **CLI** do Prisma. Não afeta o runtime (usamos SQLite) e não é exposta ao usuário. Reavaliar quando o Prisma atualizar.
-- Falta configurar o remote do GitHub (`git remote add origin ...`) — aguardando a URL do repositório.
+- Remote `origin` configurado: https://github.com/lcsmarcone/language-learning-for-youtube (branch `main`).
+- **Prisma 7** não embute mais o engine: a conexão exige um driver adapter (`@prisma/adapter-better-sqlite3`), configurado em `lib/db.ts`. A classe exportada chama-se `PrismaBetterSqlite3`.
+- O client Prisma é gerado em `lib/generated/prisma` e **não** é versionado; `postinstall` regenera após clonar.
+- Config do Prisma fica em `prisma7.config.ts` (padrão do Prisma 7), não em `package.json`.

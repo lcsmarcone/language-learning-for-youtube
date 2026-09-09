@@ -4,8 +4,8 @@
 > Leia-o antes de qualquer coisa, continue da primeira etapa não ✅, e atualize-o ao final de cada etapa.
 > Legenda: ⬜ pendente · 🔨 em andamento · ✅ concluída
 
-**Última sessão:** 2026-09-09 — Etapas 0 e 1 concluídas (fundação + modelo de dados no SQLite).
-**Próximo passo:** Etapa 2 — Parsers de legenda (SRT, VTT, transcrição colada), com testes.
+**Última sessão:** 2026-09-09 — Etapas 0, 1 e 2 concluídas (fundação, modelo de dados, parsers de legenda).
+**Próximo passo:** Etapa 3 — Biblioteca e fluxo "Adicionar vídeo".
 
 ---
 
@@ -30,11 +30,17 @@
 - [x] `postinstall: prisma generate` (o client gerado não é versionado)
 - **Verificação:** `npm run db:seed` popula; `tests/db.test.ts` cobre o fluxo vídeo→legenda→tradução→highlight→flashcard, o unique de duplicidade e o cascade de exclusão. `npm run build` passa.
 
-### ⬜ Etapa 2 — Parsers de legenda
-- [ ] `services/subtitles/parseSrt.ts`, `parseVtt.ts`, `parsePlainTranscript.ts`, `normalize.ts`
-- [ ] Tratar BOM, CRLF, `,` vs `.` nos ms, `hh:mm:ss` e `mm:ss`, tags `<i>` / `{\an8}`, blocos NOTE/STYLE, cues sobrepostos, numeração ausente
-- [ ] Erros como `{ok:false, reason}` legível
-- **Verificação:** suíte Vitest com fixtures reais + casos malformados.
+### ✅ Etapa 2 — Parsers de legenda
+- [x] `services/subtitles/`: `normalize.ts`, `parseSrt.ts`, `parseVtt.ts`, `parsePlainTranscript.ts`, `index.ts` (`parseSubtitle` + `detectFormat`)
+- [x] Tratam BOM, CRLF, `,` vs `.` nos ms, `hh:mm:ss` e `mm:ss`, tags `<i>`/`<c>`/`<00:00:01.000>`/`{\an8}`, entidades HTML, blocos NOTE/STYLE/REGION, identificadores de cue, cues fora de ordem e sobrepostos, numeração ausente, palavra partida por hífen
+- [x] `lib/result.ts`: tipo `Result` — falha de dado do usuário é retorno, não exceção
+- [x] `lib/sync.ts`: busca binária tempo → segmento (`findActiveSegmentIndex`, `findNearestSegmentIndex`, `resolveHighlightedIndex`)
+- [x] Erros como `{ok:false, reason}` em português
+- **Verificação:** 43 testes (`parseSrt`, `parseVtt`, `parseTranscript`, `sync`, `db`, `smoke`), com fixtures de BOM/CRLF e casos malformados. Conferido à mão que acentuação de FR/ES sobrevive intacta.
+
+**Ganhos além do previsto nesta etapa:**
+- Transcrição copiada do YouTube (linhas `0:15` + texto, ou `0:15 texto`) é reconhecida e usa os **tempos reais** — não fica marcada como aproximada.
+- Legenda automática do YouTube em "rolagem" (cada cue repetindo o texto do anterior) é desduplicada; sem isso a transcrição sairia com cada frase duas ou três vezes.
 
 ### ⬜ Etapa 3 — Biblioteca e "Adicionar vídeo"
 - [ ] Home: estado vazio + grid de cards (thumbnail, título, duração, % concluído, nº flashcards, última vez estudado)

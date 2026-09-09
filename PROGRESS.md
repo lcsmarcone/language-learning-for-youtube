@@ -4,8 +4,8 @@
 > Leia-o antes de qualquer coisa, continue da primeira etapa não ✅, e atualize-o ao final de cada etapa.
 > Legenda: ⬜ pendente · 🔨 em andamento · ✅ concluída
 
-**Última sessão:** 2026-09-09 — Etapas 0 a 3 concluídas (fundação, modelo de dados, parsers, biblioteca + adicionar vídeo).
-**Próximo passo:** Etapa 4 — Tela de estudo: player do YouTube + transcrição sincronizada.
+**Última sessão:** 2026-09-09 — Etapas 0 a 4 concluídas. A tela de estudo já funciona: player, sincronia, clique-para-navegar, loop e progresso persistido.
+**Próximo passo:** Etapa 5 — Camada de tradução (Anthropic, contextual em blocos, com cache).
 
 ---
 
@@ -58,15 +58,24 @@
 
 **Pendência conhecida (resolvida na Etapa 4):** `durationSec` fica nulo ao adicionar, porque o oEmbed não informa duração. O player sabe a duração e vai gravá-la na primeira reprodução.
 
-### ⬜ Etapa 4 — Tela de estudo: player + transcrição sincronizada
-- [ ] `components/video/YouTubePlayer.tsx` sobre a IFrame API (play/pause/seek/rate/getTime)
-- [ ] `lib/playerStore.ts` (zustand) + loop rAF com throttle; busca binária do segmento ativo
-- [ ] Lista virtualizada: timestamp, original, tradução, destaque do ativo, hover `▶ ↻ ★`
-- [ ] `[✓ Acompanhar vídeo]` que desliga ao scroll manual + botão "voltar para a legenda atual"
-- [ ] Clique no bloco → seek (com guarda anti-seleção); `▶` seek+play; `↻` loop do segmento; loop A-B
-- [ ] Controles: play/pause, ±5s, velocidade 0.5–1.5
-- [ ] `StudyProgress` com debounce; retoma da última posição ao reabrir
-- **Verificação:** passos 1–11 do "Critério de validação adicional" de `instrucoes.md`.
+### ✅ Etapa 4 — Tela de estudo: player + transcrição sincronizada
+- [x] `components/video/YouTubePlayer.tsx` sobre a IFrame API oficial, com `ref` imperativa (play/pause/seek/nudge/rate) e tratamento dos códigos de erro do player
+- [x] `lib/playerStore.ts` (zustand, fora do React) — só `activeIndex` é publicado para a lista; `currentMs` só o relógio assina
+- [x] Lista virtualizada (`@tanstack/react-virtual`) com timestamp, original, tradução, destaque do ativo e ações `▶ ↻` no hover (o `★` entra na Etapa 7, junto com os flashcards)
+- [x] `[✓ Acompanhar vídeo]` desliga sozinho no scroll manual (wheel, toque, teclas e **arrasto da barra de rolagem**) + botão "Voltar para a legenda atual"
+- [x] Clique no bloco → seek, com guarda dupla contra conflito com seleção de texto (arrasto > 4 px ou seleção existente cancelam a navegação)
+- [x] `lib/loop.ts` — regra do loop isolada e testada; loop de frase e loop A-B
+- [x] Controles: play/pause, ±5 s, velocidade 0.5–1.5×, relógio
+- [x] `StudyProgress` gravado a cada 5 s e no `pagehide` via `sendBeacon`; ao reabrir, o player retoma da posição salva
+- [x] `services/study.ts` + `PATCH/POST /api/videos/[id]/progress`; a **duração** do vídeo é capturada do player e gravada (o oEmbed não informa)
+- **Verificação no navegador, com vídeo real:** clique numa frase distante levou o player ao tempo dela; destaque e auto-scroll acompanharam; o vídeo tocou até o fim; recarregar a página retomou do ponto salvo; arrastar sobre o texto **não** navegou; o loop foi verificado ponta a ponta (passou do fim → voltou ao início; no meio → não interferiu; saiu do trecho → voltou). Mais 8 testes unitários da regra do loop.
+
+**Dois problemas reais encontrados testando no app (não apareceriam em teste unitário):**
+1. **`requestAnimationFrame` congela em aba de segundo plano.** O vídeo continuava tocando com áudio, mas a transcrição parava de acompanhar e o loop deixava de voltar ao início. Trocado por `setInterval` de 100 ms, que o navegador apenas desacelera (~1 Hz) em vez de congelar.
+2. **A legenda do próprio YouTube aparecia sobreposta ao vídeo** (em outro idioma), competindo com a nossa. Desligada com `cc_load_policy: 0`.
+
+**Nota de ambiente:** em perfil novo do Chrome, a política de autoplay bloqueia o `playVideo()` até o navegador acumular interação — não é falha do app; basta o usuário clicar uma vez.
+**Ferramenta de depuração:** em desenvolvimento, o store fica em `window.__playerStore` (tempo, segmento ativo, loop) — foi assim que os dois problemas acima foram diagnosticados.
 
 ### ⬜ Etapa 5 — Camada de tradução
 - [ ] `TranslationProvider` (interface) + `AnthropicProvider` + `MockProvider`

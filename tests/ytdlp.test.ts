@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { chooseSubtitleTrack, describeYtDlpError } from "@/services/subtitles/ytdlp";
+import {
+  chooseSubtitleTrack,
+  describeYtDlpError,
+  isSameLanguage,
+} from "@/services/subtitles/ytdlp";
 
 /**
  * A escolha da faixa é a parte que decide a **qualidade** do que o usuário vai
@@ -33,6 +37,14 @@ describe("chooseSubtitleTrack", () => {
     // vídeo tem dublagens; as outras não batem com o áudio.
     const escolha = chooseSubtitleTrack({}, { "en-CA": [], "en-orig": [] }, "en");
     expect(escolha).toEqual({ code: "en-orig", automatic: true });
+  });
+
+  it("recusa tradução automática que se disfarça de variante regional", () => {
+    // Visto de verdade num vídeo real: o YouTube lista "en-de" (inglês
+    // traduzido do alemão) ao lado de "xh-de" e "yi-de". O código começa com
+    // "en-", mas o texto não corresponde ao que está sendo falado.
+    const escolha = chooseSubtitleTrack({}, { "en-de": [], "en-ja": [] }, "en");
+    expect(escolha).toBeNull();
   });
 
   it("ignora faixas traduzidas por máquina a partir de outro idioma", () => {
@@ -86,5 +98,29 @@ describe("describeYtDlpError", () => {
     const mensagem = describeYtDlpError(new Error("algo muito estranho aconteceu"));
     expect(mensagem).not.toContain("algo muito estranho");
     expect(mensagem).toMatch(/Importe o arquivo/);
+  });
+});
+
+describe("isSameLanguage", () => {
+  it("aceita o código exato e o marcador de áudio original", () => {
+    expect(isSameLanguage("en", "en")).toBe(true);
+    expect(isSameLanguage("en-orig", "en")).toBe(true);
+  });
+
+  it("aceita variantes regionais, em letra maiúscula ou numéricas", () => {
+    expect(isSameLanguage("en-US", "en")).toBe(true);
+    expect(isSameLanguage("pt-BR", "pt")).toBe(true);
+    expect(isSameLanguage("es-419", "es")).toBe(true);
+  });
+
+  it("recusa sufixo minúsculo, que indica idioma de origem", () => {
+    expect(isSameLanguage("en-de", "en")).toBe(false);
+    expect(isSameLanguage("xh-de", "xh")).toBe(false);
+    expect(isSameLanguage("es-pt", "es")).toBe(false);
+  });
+
+  it("recusa idioma diferente", () => {
+    expect(isSameLanguage("est", "es")).toBe(false);
+    expect(isSameLanguage("fr", "en")).toBe(false);
   });
 });

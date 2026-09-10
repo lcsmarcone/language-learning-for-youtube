@@ -12,6 +12,8 @@ import type { FlashcardView } from "@/services/flashcards";
 
 interface FlashcardCardProps {
   card: FlashcardView;
+  selected: boolean;
+  onToggleSelected: () => void;
   onDeleted: (id: string) => void;
   onUpdated: (card: FlashcardView) => void;
 }
@@ -25,7 +27,13 @@ interface FlashcardCardProps {
  * qualquer clique a mais nesse caminho é atrito multiplicado por dezenas de
  * cards.
  */
-export function FlashcardCard({ card, onDeleted, onUpdated }: FlashcardCardProps) {
+export function FlashcardCard({
+  card,
+  selected,
+  onToggleSelected,
+  onDeleted,
+  onUpdated,
+}: FlashcardCardProps) {
   const showToast = useToast((state) => state.show);
 
   const [editing, setEditing] = useState(false);
@@ -88,7 +96,13 @@ export function FlashcardCard({ card, onDeleted, onUpdated }: FlashcardCardProps
   }
 
   return (
-    <article className="flex flex-col gap-3 rounded-lg border border-border bg-bg-elevated p-4">
+    <article
+      className={
+        selected
+          ? "flex flex-col gap-3 rounded-lg border border-accent bg-bg-elevated p-4"
+          : "flex flex-col gap-3 rounded-lg border border-border bg-bg-elevated p-4"
+      }
+    >
       {editing ? (
         <div className="flex flex-col gap-3">
           <Field label="Frente">
@@ -131,13 +145,22 @@ export function FlashcardCard({ card, onDeleted, onUpdated }: FlashcardCardProps
         </div>
       ) : (
         <>
-          <div>
+          <div className="flex items-start gap-3">
+            <input
+              type="checkbox"
+              checked={selected}
+              onChange={onToggleSelected}
+              aria-label={`Selecionar "${card.front}" para exportar`}
+              className="mt-1.5 h-3.5 w-3.5 shrink-0 accent-[var(--accent)]"
+            />
+            <div className="min-w-0 flex-1">
             <p className="text-[15px] leading-relaxed text-fg">{card.front}</p>
             <p className="mt-1 text-sm leading-relaxed text-fg-muted">
               {card.back || (
                 <span className="text-fg-subtle">Sem tradução.</span>
               )}
             </p>
+            </div>
           </div>
 
           {card.contextText ? (

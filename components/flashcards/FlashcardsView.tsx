@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import { Search } from "lucide-react";
 import { FlashcardCard } from "./FlashcardCard";
+import { ExportBar } from "./ExportBar";
 import type { FlashcardView } from "@/services/flashcards";
 
 interface FlashcardsViewProps {
@@ -22,6 +23,7 @@ export function FlashcardsView({ cards, videos }: FlashcardsViewProps) {
   const [items, setItems] = useState(cards);
   const [videoId, setVideoId] = useState<string | null>(null);
   const [query, setQuery] = useState("");
+  const [selected, setSelected] = useState<ReadonlySet<string>>(new Set());
 
   const filtered = useMemo(() => {
     const term = query.trim().toLowerCase();
@@ -36,6 +38,23 @@ export function FlashcardsView({ cards, videos }: FlashcardsViewProps) {
       );
     });
   }, [items, videoId, query]);
+
+  // A seleção acompanha o que está visível: filtrar não pode deixar para trás
+  // ids selecionados que o usuário não vê mais.
+  const visibleIds = filtered.map((card) => card.id);
+  const selectedVisible = visibleIds.filter((id) => selected.has(id));
+
+  function toggle(id: string) {
+    setSelected((current) => {
+      const next = new Set(current);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  }
 
   if (items.length === 0) {
     return (
@@ -104,6 +123,22 @@ export function FlashcardsView({ cards, videos }: FlashcardsViewProps) {
         </div>
       ) : null}
 
+      <ExportBar
+        selectedIds={selectedVisible}
+        visibleIds={visibleIds}
+        videoId={videoId}
+      />
+
+      {selectedVisible.length > 0 ? (
+        <button
+          type="button"
+          onClick={() => setSelected(new Set())}
+          className="self-start text-xs text-fg-muted underline underline-offset-4 hover:text-fg"
+        >
+          Limpar seleção
+        </button>
+      ) : null}
+
       {filtered.length === 0 ? (
         <p className="py-12 text-center text-sm text-fg-muted">
           Nenhum flashcard corresponde a essa busca.
@@ -114,9 +149,16 @@ export function FlashcardsView({ cards, videos }: FlashcardsViewProps) {
             <FlashcardCard
               key={card.id}
               card={card}
-              onDeleted={(id) =>
-                setItems((current) => current.filter((item) => item.id !== id))
-              }
+              selected={selected.has(card.id)}
+              onToggleSelected={() => toggle(card.id)}
+              onDeleted={(id) => {
+                setItems((current) => current.filter((item) => item.id !== id));
+                setSelected((current) => {
+                  const next = new Set(current);
+                  next.delete(id);
+                  return next;
+                });
+              }}
               onUpdated={(updated) =>
                 setItems((current) =>
                   current.map((item) =>

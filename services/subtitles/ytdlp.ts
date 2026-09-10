@@ -95,8 +95,7 @@ export function chooseSubtitleTrack(
   automatic: Record<string, unknown>,
   lang: string,
 ): SubtitleTrackChoice | null {
-  const isVariant = (code: string) =>
-    code === lang || code.toLowerCase().startsWith(`${lang.toLowerCase()}-`);
+  const isVariant = (code: string) => isSameLanguage(code, lang);
 
   // "en-orig" é como o YouTube marca o áudio original quando o vídeo tem
   // dublagens; é a faixa que corresponde ao que se ouve.
@@ -118,6 +117,36 @@ export function chooseSubtitleTrack(
   if (automaticCode) return { code: automaticCode, automatic: true };
 
   return null;
+}
+
+/**
+ * Diz se um código de faixa é o idioma pedido — e não uma tradução automática
+ * a partir de outro idioma.
+ *
+ * O YouTube usa a mesma forma `xx-yy` para duas coisas diferentes, e confundir
+ * as duas entrega ao usuário um texto que não corresponde ao áudio:
+ *
+ * - `en-US`, `pt-BR`, `es-419` → **variante regional**. O sufixo é código de
+ *   região: maiúsculo ou numérico. É o mesmo idioma, e serve.
+ * - `en-de`, `xh-de`, `yi-de` → **tradução automática** ("English from
+ *   German", "Xhosa from German"). O sufixo é código de idioma, minúsculo.
+ *   Para quem está aprendendo, isso é pior que nada.
+ *
+ * `-orig` é caso à parte: marca a faixa do áudio original em vídeos dublados,
+ * e é justamente a que queremos.
+ */
+export function isSameLanguage(code: string, lang: string): boolean {
+  const normalized = code.toLowerCase();
+  const wanted = lang.toLowerCase();
+
+  if (normalized === wanted) return true;
+  if (normalized === `${wanted}-orig`) return true;
+  if (!normalized.startsWith(`${wanted}-`)) return false;
+
+  const suffix = code.slice(lang.length + 1);
+  // Região: numérica (419) ou em maiúsculas (US, BR). Qualquer sufixo
+  // alfabético minúsculo é idioma de origem, ou seja, tradução de máquina.
+  return /^[0-9]+$/.test(suffix) || suffix === suffix.toUpperCase();
 }
 
 export interface FetchSubtitleResult {
@@ -230,7 +259,10 @@ export function describeYtDlpError(error: unknown): string {
   // versões antigas param de conseguir abrir o vídeo. A solução é atualizar,
   // então é isso que a mensagem diz.
   if (/not available on this app|Please report this issue|nsig extraction failed/i.test(message)) {
-    return "Seu yt-dlp está desatualizado para a versão atual do YouTube. Rode `yt-dlp -U` e tente de novo, ou importe a legenda manualmente.";
+    // O comando certo depende de como o yt-dlp foi instalado: `-U` só funciona
+    // na instalação avulsa e briga com gerenciadores de pacote, então damos as
+    // duas formas em vez de mandar o usuário para um comando que pode falhar.
+    return "Seu yt-dlp está desatualizado para a versão atual do YouTube. Atualize com `winget upgrade yt-dlp` (Windows), `brew upgrade yt-dlp` (macOS) ou `yt-dlp -U`, e tente de novo.";
   }
   if (/private video|Sign in to confirm|members-only|age|bot/i.test(message)) {
     return "Este vídeo é privado, restrito ou exige login, então a legenda não pode ser baixada por aqui.";

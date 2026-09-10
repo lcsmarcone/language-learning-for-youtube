@@ -51,7 +51,7 @@ export function TranscriptList({
     getScrollElement: () => scrollRef.current,
     // Altura aproximada de um bloco com original + tradução; o virtualizador
     // corrige com a medição real de cada linha.
-    estimateSize: () => 92,
+    estimateSize: () => 104,
     overscan: 8,
     getItemKey: (index) => segments[index].id,
   });
@@ -135,11 +135,14 @@ export function TranscriptList({
       <div
         ref={scrollRef}
         tabIndex={-1}
-        className="scroll-thin min-h-0 flex-1 overflow-y-auto px-2 py-2"
+        className="scroll-thin min-h-0 flex-1 overflow-y-auto px-4 py-5"
       >
+        {/* Largura de leitura limitada: linha longa demais cansa a vista e
+            faz o olho perder o começo da próxima. Em tela larga, o texto para
+            de esticar e a coluna respira. */}
         <div
           style={{ height: `${virtualizer.getTotalSize()}px` }}
-          className="relative w-full"
+          className="relative mx-auto w-full max-w-[46rem]"
         >
           {virtualizer.getVirtualItems().map((item) => {
             const segment = segments[item.index];

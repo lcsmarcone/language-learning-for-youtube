@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Clock, Layers, Trash2 } from "lucide-react";
+import { Trash2 } from "lucide-react";
 import type { LibraryVideo } from "@/services/library";
 import { LANGUAGE_LABELS } from "@/lib/domain";
 import { formatDuration } from "@/lib/time";
@@ -52,7 +52,10 @@ export function VideoCard({ video }: { video: LibraryVideo }) {
   }
 
   return (
-    <article className="group relative flex flex-col overflow-hidden rounded-lg border border-border bg-bg-elevated transition-colors hover:border-border-strong">
+    // Sem elevação nem sombra no hover: card que levanta e projeta sombra
+    // cinza é o vocabulário de painel de SaaS, e aqui só somaria ruído. O
+    // aviso de que o card responde ao mouse é a borda ficando nítida.
+    <article className="group relative flex flex-col overflow-hidden rounded-lg border border-border bg-bg-elevated transition-colors duration-200 hover:border-border-strong">
       <Link href={`/video/${video.id}`} className="flex flex-col">
         <div className="relative aspect-video w-full overflow-hidden bg-bg-subtle">
           {video.thumbnailUrl ? (
@@ -65,47 +68,42 @@ export function VideoCard({ video }: { video: LibraryVideo }) {
             />
           ) : null}
           {percent > 0 ? (
-            <div
-              className="absolute inset-x-0 bottom-0 h-0.5 bg-accent"
-              style={{ width: `${Math.min(100, percent)}%` }}
-              aria-hidden
-            />
+            <div className="absolute inset-x-0 bottom-0 h-1 bg-black/30" aria-hidden>
+              <div
+                className="h-full bg-accent"
+                style={{ width: `${Math.min(100, percent)}%` }}
+              />
+            </div>
           ) : null}
         </div>
 
         <div className="flex flex-col gap-2 p-4">
-          <h3 className="line-clamp-2 text-sm font-medium leading-snug text-fg">
+          <h3 className="line-clamp-2 font-serif text-[15px] font-medium leading-snug text-fg">
             {video.title}
           </h3>
 
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-fg-muted">
-            <span>{LANGUAGE_LABELS[video.sourceLang as "en"] ?? video.sourceLang}</span>
-            <span className="inline-flex items-center gap-1">
-              <Clock size={11} strokeWidth={1.75} />
-              {formatDuration(video.durationSec)}
-            </span>
-            <span className="inline-flex items-center gap-1">
-              <Layers size={11} strokeWidth={1.75} />
-              {video.flashcardCount}{" "}
-              {video.flashcardCount === 1 ? "flashcard" : "flashcards"}
-            </span>
-          </div>
+          {/* Sem ícones aqui: relógio ao lado de "15 min" e camadas ao lado de
+              "flashcards" não acrescentam nada que a palavra já não diga
+              (instrucoes.md §11, "ícones desnecessários"). */}
+          <p className="text-[12px] text-fg-muted">
+            {LANGUAGE_LABELS[video.sourceLang as "en"] ?? video.sourceLang},{" "}
+            {formatDuration(video.durationSec)}
+            {video.flashcardCount > 0
+              ? `, ${video.flashcardCount} ${video.flashcardCount === 1 ? "flashcard" : "flashcards"}`
+              : ""}
+          </p>
 
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-fg-subtle">
-            <span>{percent > 0 ? `${percent}% concluído` : "Não iniciado"}</span>
-            {translated < 100 ? (
-              <span>
-                {translated === 0
-                  ? "sem tradução ainda"
-                  : `${translated}% traduzido`}
-              </span>
-            ) : null}
-            {video.timingsApproximate ? (
-              <span title="Os tempos foram estimados a partir do texto.">
-                sincronia aproximada
-              </span>
-            ) : null}
-          </div>
+          {/* Só o que muda a decisão de abrir ou não: onde parei, e se ainda
+              falta traduzir. O resto fica de fora. */}
+          <p className="text-[12px] text-fg-subtle">
+            {percent > 0 ? `${percent}% assistido` : "Ainda não começou"}
+            {translated < 100
+              ? translated === 0
+                ? " — falta traduzir"
+                : ` — ${100 - translated}% ainda sem tradução`
+              : ""}
+            {video.timingsApproximate ? " — sincronia aproximada" : ""}
+          </p>
         </div>
       </Link>
 

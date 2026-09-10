@@ -278,7 +278,7 @@ export function StudyScreen({
       </header>
 
       <div className="grid min-h-0 flex-1 grid-cols-1 lg:grid-cols-[minmax(0,1.15fr)_minmax(22rem,0.85fr)]">
-        <section className="flex min-w-0 flex-col gap-4 border-border p-6 lg:border-r">
+        <section className="flex min-w-0 flex-col justify-center gap-5 border-border p-6 lg:border-r">
           {video.externalId ? (
             <YouTubePlayer
               ref={playerRef}
@@ -311,18 +311,15 @@ export function StudyScreen({
         </section>
 
         <section className="flex min-h-0 min-w-0 flex-col">
-          <div className="flex h-11 shrink-0 items-center justify-between gap-3 border-b border-border px-4">
+          <div className="flex h-12 shrink-0 items-center justify-between gap-3 border-b border-border px-5">
             <span className="text-xs text-fg-subtle">
               {video.segments.length}{" "}
-              {video.segments.length === 1 ? "bloco" : "blocos"}
-              {untranslated > 0 && video.segments.length > 0 ? (
-                <>
-                  {" · "}
-                  {video.translatedCount === 0
-                    ? "sem tradução ainda"
-                    : `${untranslated} sem tradução`}
-                </>
-              ) : null}
+              {video.segments.length === 1 ? "frase" : "frases"}
+              {untranslated > 0 && video.segments.length > 0
+                ? video.translatedCount === 0
+                  ? ", nenhuma traduzida"
+                  : `, ${untranslated} sem tradução`
+                : ""}
             </span>
 
             <label className="flex cursor-pointer select-none items-center gap-1.5 text-xs text-fg-muted">

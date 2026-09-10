@@ -19,6 +19,11 @@ export function LibraryView({ videos }: { videos: LibraryVideo[] }) {
   );
   const rest = videos.filter((video) => !inProgress.includes(video));
 
+  // Separar em seções só ajuda quando há o que separar. Com poucos vídeos, os
+  // dois títulos criavam duas fileiras pela metade e a tela parecia inacabada;
+  // uma grade só, com o convite no fim, preenche a linha e diz a mesma coisa.
+  const sectioned = videos.length >= 4 && inProgress.length > 0;
+
   return (
     <>
       {videos.length === 0 ? (
@@ -26,7 +31,7 @@ export function LibraryView({ videos }: { videos: LibraryVideo[] }) {
       ) : (
         <div className="flex flex-col gap-10">
           <div className="flex items-center justify-between">
-            <h1 className="text-lg font-medium tracking-tight text-fg">
+            <h1 className="font-serif text-2xl font-medium tracking-tight text-fg">
               Biblioteca
             </h1>
             <Button variant="primary" onClick={() => setDialogOpen(true)}>
@@ -35,16 +40,22 @@ export function LibraryView({ videos }: { videos: LibraryVideo[] }) {
             </Button>
           </div>
 
-          {inProgress.length > 0 ? (
-            <Section title="Continue estudando" videos={inProgress} />
-          ) : null}
-
-          {rest.length > 0 ? (
+          {sectioned ? (
+            <>
+              <Section title="Continue estudando" videos={inProgress} />
+              <Section
+                title="Todos os vídeos"
+                videos={rest}
+                onAdd={() => setDialogOpen(true)}
+              />
+            </>
+          ) : (
             <Section
-              title={inProgress.length > 0 ? "Todos os vídeos" : null}
-              videos={rest}
+              title={null}
+              videos={[...inProgress, ...rest]}
+              onAdd={() => setDialogOpen(true)}
             />
-          ) : null}
+          )}
         </div>
       )}
 
@@ -63,30 +74,57 @@ export function LibraryView({ videos }: { videos: LibraryVideo[] }) {
 function Section({
   title,
   videos,
+  onAdd,
 }: {
   title: string | null;
   videos: LibraryVideo[];
+  /** Quando presente, a grade termina com um convite para adicionar. */
+  onAdd?: () => void;
 }) {
   return (
     <section className="flex flex-col gap-4">
       {title ? (
-        <h2 className="text-xs font-medium uppercase tracking-wide text-fg-subtle">
-          {title}
-        </h2>
+        <h2 className="text-[13px] font-medium text-fg-muted">{title}</h2>
       ) : null}
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
         {videos.map((video) => (
           <VideoCard key={video.id} video={video} />
         ))}
+        {onAdd ? <AddCard onAdd={onAdd} /> : null}
       </div>
     </section>
+  );
+}
+
+/**
+ * Card vazio no fim da grade.
+ *
+ * Existe por um motivo concreto: com poucos vídeos, a grade de três colunas
+ * deixava um vazio grande à direita que parecia tela inacabada. Este card
+ * ocupa esse espaço com a ação que o usuário vai querer em seguida — resolve
+ * a composição sendo útil, e não decorando.
+ */
+function AddCard({ onAdd }: { onAdd: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onAdd}
+      className="group flex min-h-48 flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-border text-fg-subtle transition-colors hover:border-accent hover:bg-bg-subtle hover:text-fg"
+    >
+      <Plus
+        size={18}
+        strokeWidth={1.5}
+        className="transition-transform duration-200 group-hover:scale-110"
+      />
+      <span className="text-xs">Adicionar outro vídeo</span>
+    </button>
   );
 }
 
 function EmptyState({ onAdd }: { onAdd: () => void }) {
   return (
     <div className="mx-auto flex max-w-md flex-1 flex-col items-center justify-center py-24 text-center">
-      <h1 className="text-balance text-2xl font-medium tracking-tight text-fg">
+      <h1 className="text-balance font-serif text-[32px] font-normal leading-[1.25] tracking-tight text-fg">
         Aprenda idiomas com os vídeos que você realmente quer assistir.
       </h1>
       <p className="mt-3 text-pretty text-sm leading-relaxed text-fg-muted">

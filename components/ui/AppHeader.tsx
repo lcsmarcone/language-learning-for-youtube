@@ -11,11 +11,11 @@ export function AppHeader() {
       <div className="mx-auto flex h-14 w-full max-w-6xl items-center gap-6 px-6">
         <Link
           href="/"
-          className="text-sm font-medium tracking-tight text-fg hover:text-accent"
+          className="font-serif text-[15px] font-semibold tracking-tight text-fg transition-colors hover:text-accent"
         >
           Estudo por vídeo
         </Link>
-        <nav className="flex items-center gap-4 text-sm text-fg-muted">
+        <nav className="flex items-center gap-5 text-[13px] text-fg-muted">
           <Link href="/" className="transition-colors hover:text-fg">
             Biblioteca
           </Link>

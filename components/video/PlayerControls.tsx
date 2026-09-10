@@ -42,7 +42,7 @@ export function PlayerControls({
   const loop = usePlayerStore((state) => state.loop);
 
   return (
-    <div className="flex flex-wrap items-center gap-x-2 gap-y-2">
+    <div className="flex flex-wrap items-center gap-x-1.5 gap-y-2">
       <ControlButton
         label={isPlaying ? "Pausar" : "Reproduzir"}
         onClick={onTogglePlay}
@@ -74,7 +74,7 @@ export function PlayerControls({
         <Repeat size={15} strokeWidth={1.75} />
       </ControlButton>
 
-      <span className="ml-1 font-mono text-xs tabular-nums text-fg-muted">
+      <span className="ml-2 font-mono text-xs tabular-nums text-fg-muted">
         {formatTimestamp(currentMs)}
         <span className="text-fg-subtle">
           {" / "}

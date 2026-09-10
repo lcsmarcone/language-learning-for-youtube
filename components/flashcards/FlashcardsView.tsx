@@ -59,7 +59,7 @@ export function FlashcardsView({ cards, videos }: FlashcardsViewProps) {
   if (items.length === 0) {
     return (
       <div className="mx-auto flex max-w-md flex-1 flex-col items-center justify-center py-24 text-center">
-        <h1 className="text-xl font-medium tracking-tight text-fg">
+        <h1 className="font-serif text-2xl font-normal tracking-tight text-fg">
           Nenhum flashcard ainda.
         </h1>
         <p className="mt-3 text-pretty text-sm leading-relaxed text-fg-muted">
@@ -80,7 +80,7 @@ export function FlashcardsView({ cards, videos }: FlashcardsViewProps) {
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-lg font-medium tracking-tight text-fg">
+        <h1 className="font-serif text-2xl font-medium tracking-tight text-fg">
           Flashcards
           <span className="ml-2 text-sm font-normal text-fg-subtle">
             {filtered.length === items.length

@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { ThemeScript } from "@/components/ui/ThemeScript";
 import { Toaster } from "@/components/ui/Toast";
+import { OfflineBanner } from "@/components/ui/OfflineBanner";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -23,6 +24,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <ThemeScript />
       </head>
       <body className="min-h-full flex flex-col bg-bg text-fg">
+        <OfflineBanner />
         {children}
         <Toaster />
       </body>

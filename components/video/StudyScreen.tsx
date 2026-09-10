@@ -1,8 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, Clock3 } from "lucide-react";
+import { ArrowLeft, Clock3, Keyboard } from "lucide-react";
 import type { StudySegment } from "@/lib/domain";
 import type { StudyVideo } from "@/services/study";
 import { usePlayerStore } from "@/lib/playerStore";
@@ -16,6 +16,8 @@ import { useSelectionStore } from "@/lib/selectionStore";
 import { useToast } from "@/components/ui/Toast";
 import { PlayerControls } from "./PlayerControls";
 import { YouTubePlayer, type PlayerHandle } from "./YouTubePlayer";
+import { useStudyShortcuts } from "./useStudyShortcuts";
+import { ShortcutsModal } from "@/components/ui/ShortcutsModal";
 
 /** De quanto em quanto tempo o progresso é gravado durante a reprodução. */
 const SAVE_INTERVAL_MS = 5000;
@@ -44,6 +46,7 @@ export function StudyScreen({
   startAtMs,
 }: StudyScreenProps) {
   const showToast = useToast((state) => state.show);
+  const [helpOpen, setHelpOpen] = useState(false);
   const playerRef = useRef<PlayerHandle>(null);
   const durationSecRef = useRef<number | null>(video.durationSec);
 
@@ -235,6 +238,15 @@ export function StudyScreen({
     [setPlaybackRate],
   );
 
+  useStudyShortcuts({
+    playerRef,
+    onSeekSegment: handleSeek,
+    onRepeatCurrent: handleRepeatCurrent,
+    onCreateFlashcard: handleCreateFlashcard,
+    onShowHelp: () => setHelpOpen(true),
+    onMessage: showToast,
+  });
+
   const untranslated = video.segments.length - video.translatedCount;
 
   return (
@@ -250,7 +262,16 @@ export function StudyScreen({
         <h1 className="min-w-0 truncate text-sm font-medium text-fg">
           {video.title}
         </h1>
-        <span className="ml-auto shrink-0 text-xs text-fg-subtle">
+        <button
+          type="button"
+          onClick={() => setHelpOpen(true)}
+          title="Atalhos de teclado (?)"
+          aria-label="Atalhos de teclado"
+          className="ml-auto inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-fg-subtle transition-colors hover:bg-bg-hover hover:text-fg"
+        >
+          <Keyboard size={15} strokeWidth={1.75} />
+        </button>
+        <span className="shrink-0 text-xs text-fg-subtle">
           {LANGUAGE_LABELS[video.sourceLang as "en"] ?? video.sourceLang} →{" "}
           {LANGUAGE_LABELS["pt-BR"]}
         </span>
@@ -335,6 +356,8 @@ export function StudyScreen({
       </div>
 
       <SelectionBar videoId={video.id} segments={video.segments} />
+
+      <ShortcutsModal open={helpOpen} onClose={() => setHelpOpen(false)} />
     </div>
   );
 }

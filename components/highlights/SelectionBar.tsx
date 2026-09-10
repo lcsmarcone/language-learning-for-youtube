@@ -148,6 +148,7 @@ export function SelectionBar({ videoId, segments }: SelectionBarProps) {
             size="sm"
             onClick={handleCreateFlashcard}
             disabled={saving}
+            data-shortcut="create-flashcard"
           >
             <Star size={13} strokeWidth={1.75} />
             Criar flashcard

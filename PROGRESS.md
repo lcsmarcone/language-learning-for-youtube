@@ -4,8 +4,8 @@
 > Leia-o antes de qualquer coisa, continue da primeira etapa não ✅, e atualize-o ao final de cada etapa.
 > Legenda: ⬜ pendente · 🔨 em andamento · ✅ concluída
 
-**Última sessão:** 2026-09-09 — Etapas 0 a 7 concluídas. **O fluxo do produto está fechado:** vídeo → legenda → tradução → seleção → flashcard → copiar para o Anki, sobrevivendo a recarregar a página.
-**Próximo passo:** Etapa 8 — Exportação em lote (TSV/CSV).
+**Última sessão:** 2026-09-10 — Etapas 0 a 8 concluídas. Fluxo fechado do vídeo ao arquivo pronto para importar no Anki.
+**Próximo passo:** Etapa 9 — Atalhos, estados de erro e acabamento.
 
 ---
 
@@ -123,12 +123,16 @@
 
 **Nota de verificação:** não consegui ler o conteúdo do clipboard pelo navegador automatizado (a leitura abre um pedido de permissão que trava a página). O formato copiado é coberto por teste unitário (`frontBackLine`), e o retorno visual do clique foi conferido na tela.
 
-### ⬜ Etapa 8 — Exportação
-- [ ] `services/export/`: `toTsv`, `toCsv` com escaping correto; colunas `Front | Back | Source | Timestamp`
-- [ ] `GET /api/flashcards/export?format=tsv&videoId=` → download
-- [ ] Seleção múltipla + "Exportar selecionados"
-- [ ] `interface FlashcardExporter` deixando AnkiConnect/.apkg como futuro
-- **Verificação:** testes de escaping + importar o arquivo no Anki de verdade.
+### ✅ Etapa 8 — Exportação
+- [x] `services/export/`: `TsvExporter` e `CsvExporter` atrás da interface `FlashcardExporter`, com registro por id — AnkiConnect e `.apkg` entram como classe nova, sem refatorar nada
+- [x] Colunas `Front | Back | Source | Timestamp`, com cabeçalho opcional
+- [x] Escape por formato: no TSV, tabulação e quebra de linha viram espaço (o formato não tem escape de verdade); no CSV, aspas dobradas e CRLF, com BOM para o Excel abrir UTF-8
+- [x] `GET /api/flashcards/export?format=&videoId=&ids=` devolve o arquivo como anexo; os botões são links diretos, sem `Blob` montado no navegador
+- [x] Seleção múltipla na página de flashcards + "Exportar selecionados"; sem seleção, exporta o que está filtrado
+- [x] O arquivo sai **na ordem do vídeo**, não na ordem de criação — quem importa reencontra as frases na sequência em que aparecem
+- **Verificação:** 130 testes (escaping de TSV e CSV, nome de arquivo seguro, registro de formatos). Exportação real conferida: cabeçalhos HTTP, nome do arquivo, conteúdo dos dois formatos, campos com vírgula e aspas protegidos, e os erros de "nenhum card" e "formato inválido".
+
+**Pendente para você:** importar o `.tsv` gerado no Anki de verdade — é o único passo que não dá para verificar daqui.
 
 ### ⬜ Etapa 9 — Atalhos, estados e acabamento
 - [ ] Atalhos: Espaço, ←/→, ↑/↓, R, A, F, Esc, `?` (modal de atalhos); ignorados em input/textarea

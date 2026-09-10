@@ -78,9 +78,11 @@ export async function readJsonBody<T>(
  *
  * O erro real vai para o log do servidor; o usuário recebe algo acionável.
  */
-export async function handleRoute<T>(
-  fn: () => Promise<NextResponse<ApiResponse<T>> | NextResponse>,
-): Promise<NextResponse> {
+export async function handleRoute(
+  // `Response` também é aceito porque nem toda rota devolve JSON: a exportação
+  // devolve um arquivo para download.
+  fn: () => Promise<Response>,
+): Promise<Response> {
   try {
     return await fn();
   } catch (error) {

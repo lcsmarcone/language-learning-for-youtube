@@ -2,87 +2,104 @@
 
 /* ---------------------------------------------------------------
    Tokens de design.
-   Poucas cores, muito espaço, tipografia clara (instrucoes.md §11).
-   Uma única cor de acento; o resto é escala de cinza neutra.
+
+   A ideia que governa tudo: este produto é uma edição de estudo de um
+   vídeo, e o ato central dele não é assistir — é marcar uma frase para
+   levar embora.
+
+   Por isso existe **uma** cor saturada na interface, a do marca-texto, e
+   ela serve às três coisas que dizem a mesma frase: o botão principal, a
+   legenda que está tocando agora e o trecho marcado. O que muda entre elas
+   é a forma — traço, preenchimento —, não o tom. Fora isso, só neutros
+   (instrucoes.md §11, "poucas cores").
+
+   Os neutros são quentes porque a tela é superfície de leitura; e as
+   escuras são escuras de verdade, porque quando há vídeo na tela ele deve
+   ser a fonte de luz.
    --------------------------------------------------------------- */
 
 :root {
-  --bg: #ffffff;
-  --bg-subtle: #fafafa;
+  /* Neutros levemente quentes, e nao o cinza puro.
+     O cinza neutro de biblioteca de componentes e o que da a qualquer tela
+     aquele ar de painel generico; um tom de papel muda a sensacao sem
+     acrescentar nenhuma cor nova. */
+  --bg: #fbfaf8;
+  --bg-subtle: #f5f3ef;
   --bg-elevated: #ffffff;
-  --bg-hover: #f4f4f5;
-  --bg-active: #eeeef0;
+  --bg-hover: #f0ede8;
+  --bg-active: #e7e3dc;
 
-  --fg: #18181b;
-  --fg-muted: #71717a;
-  --fg-subtle: #a1a1aa;
+  --fg: #1c1a17;
+  --fg-muted: #6b6660;
+  --fg-subtle: #9c968e;
 
-  --border: #e4e4e7;
-  --border-strong: #d4d4d8;
+  --border: #e6e2db;
+  --border-strong: #d3cec5;
 
-  --accent: #2563eb;
+  /* Ocre de marca-texto, escurecido para ter contraste sobre papel. */
+  --accent: #8a5a09;
   --accent-fg: #ffffff;
-  --accent-subtle: #eff4ff;
+  --accent-subtle: #f6ecd8;
 
-  --highlight: #fde68a;
-  --highlight-soft: #fef3c7;
+  --highlight: #e0a63c;
+  --highlight-soft: #f8e5ba;
 
-  --danger: #dc2626;
-  --success: #16a34a;
+  --danger: #b4342b;
+  --success: #2f7d4f;
 
   --radius: 0.5rem;
 }
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --bg: #09090b;
-    --bg-subtle: #0c0c0f;
-    --bg-elevated: #131316;
-    --bg-hover: #1b1b1f;
-    --bg-active: #232328;
+    --bg: #12110f;
+    --bg-subtle: #171614;
+    --bg-elevated: #1c1a18;
+    --bg-hover: #232120;
+    --bg-active: #2c2a27;
 
-    --fg: #f4f4f5;
-    --fg-muted: #a1a1aa;
-    --fg-subtle: #71717a;
+    --fg: #f2efe9;
+    --fg-muted: #a39d94;
+    --fg-subtle: #746e66;
 
-    --border: #26262b;
-    --border-strong: #35353c;
+    --border: #2a2825;
+    --border-strong: #3c3935;
 
-    --accent: #60a5fa;
-    --accent-fg: #09090b;
-    --accent-subtle: #16233d;
+    --accent: #e0a84e;
+    --accent-fg: #1c1408;
+    --accent-subtle: #2f2410;
 
-    --highlight: #a16207;
-    --highlight-soft: #52400c;
+    --highlight: #e0a84e;
+    --highlight-soft: #4a3917;
 
-    --danger: #f87171;
-    --success: #4ade80;
+    --danger: #e5796d;
+    --success: #6fbf87;
   }
 }
 
 :root[data-theme="dark"] {
-  --bg: #09090b;
-  --bg-subtle: #0c0c0f;
-  --bg-elevated: #131316;
-  --bg-hover: #1b1b1f;
-  --bg-active: #232328;
+  --bg: #12110f;
+  --bg-subtle: #171614;
+  --bg-elevated: #1c1a18;
+  --bg-hover: #232120;
+  --bg-active: #2c2a27;
 
-  --fg: #f4f4f5;
-  --fg-muted: #a1a1aa;
-  --fg-subtle: #71717a;
+  --fg: #f2efe9;
+  --fg-muted: #a39d94;
+  --fg-subtle: #746e66;
 
-  --border: #26262b;
-  --border-strong: #35353c;
+  --border: #2a2825;
+  --border-strong: #3c3935;
 
-  --accent: #60a5fa;
-  --accent-fg: #09090b;
-  --accent-subtle: #16233d;
+  --accent: #e0a84e;
+  --accent-fg: #1c1408;
+  --accent-subtle: #2f2410;
 
-  --highlight: #a16207;
-  --highlight-soft: #52400c;
+  --highlight: #e0a84e;
+  --highlight-soft: #4a3917;
 
-  --danger: #f87171;
-  --success: #4ade80;
+  --danger: #e5796d;
+  --success: #6fbf87;
 }
 
 @theme inline {
@@ -110,6 +127,7 @@
   --color-success: var(--success);
 
   --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-serif: var(--font-source-serif), ui-serif, Georgia, serif;
   --font-mono: var(--font-mono-stack), ui-monospace, SFMono-Regular, monospace;
 
   --radius-base: var(--radius);

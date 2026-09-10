@@ -99,8 +99,8 @@ export function FlashcardCard({
     <article
       className={
         selected
-          ? "flex flex-col gap-3 rounded-lg border border-accent bg-bg-elevated p-4"
-          : "flex flex-col gap-3 rounded-lg border border-border bg-bg-elevated p-4"
+          ? "flex flex-col gap-3 rounded-lg border border-accent bg-accent-subtle/30 p-4 transition-colors"
+          : "flex flex-col gap-3 rounded-lg border border-border bg-bg-elevated p-4 transition-colors hover:border-border-strong"
       }
     >
       {editing ? (
@@ -154,8 +154,10 @@ export function FlashcardCard({
               className="mt-1.5 h-3.5 w-3.5 shrink-0 accent-[var(--accent)]"
             />
             <div className="min-w-0 flex-1">
-            <p className="text-[15px] leading-relaxed text-fg">{card.front}</p>
-            <p className="mt-1 text-sm leading-relaxed text-fg-muted">
+            <p className="font-serif text-[17px] leading-[1.5] text-fg">
+              {card.front}
+            </p>
+            <p className="mt-1.5 text-[13.5px] leading-[1.55] text-fg-muted">
               {card.back || (
                 <span className="text-fg-subtle">Sem tradução.</span>
               )}

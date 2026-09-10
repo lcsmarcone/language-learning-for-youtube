@@ -93,16 +93,23 @@ export const SegmentRow = memo(function SegmentRow({
       onMouseDown={handleMouseDown}
       onMouseUp={handleMouseUp}
       className={clsx(
-        "group relative cursor-pointer scroll-mt-24 rounded-md px-3 py-3 transition-colors",
-        isActive ? "bg-accent-subtle" : "hover:bg-bg-hover",
-        isLooping && "ring-1 ring-inset ring-accent",
+        // O destaque da frase ativa é um trilho na lateral, e não um bloco de
+        // cor cheia: o bloco competia com o vídeo pela atenção, e o trilho diz
+        // a mesma coisa sem gritar.
+        "group relative cursor-pointer scroll-mt-24 rounded-r-md border-l-2 py-3 pl-4 pr-3 transition-colors duration-150",
+        isActive
+          ? "border-l-accent bg-accent-subtle/50"
+          : "border-l-transparent hover:bg-bg-hover",
+        isLooping && "border-l-accent bg-accent-subtle/30",
       )}
     >
       <div className="flex items-start gap-3">
         <span
           className={clsx(
-            "mt-0.5 w-11 shrink-0 select-none font-mono text-[11px] tabular-nums",
-            isActive ? "text-accent" : "text-fg-subtle",
+            "mt-[3px] w-10 shrink-0 select-none font-mono text-[10px] tracking-tight tabular-nums transition-colors",
+            isActive
+              ? "text-accent"
+              : "text-fg-subtle/70 group-hover:text-fg-subtle",
           )}
         >
           {formatTimestamp(segment.startMs)}
@@ -112,7 +119,7 @@ export const SegmentRow = memo(function SegmentRow({
           <p
             data-role="original"
             className={clsx(
-              "text-[15px] leading-relaxed text-fg",
+              "font-serif text-[17px] leading-[1.5] text-fg",
               mirrorOriginal && "rounded-sm bg-highlight-soft/60",
             )}
           >
@@ -123,7 +130,7 @@ export const SegmentRow = memo(function SegmentRow({
             <p
               data-role="translation"
               className={clsx(
-                "mt-1 text-sm leading-relaxed text-fg-muted",
+                "mt-1.5 text-[13.5px] leading-[1.55] text-fg-muted",
                 mirrorTranslation && "rounded-sm bg-highlight-soft/60 text-fg",
               )}
             >
@@ -140,7 +147,7 @@ export const SegmentRow = memo(function SegmentRow({
             atrapalhar a seleção. */}
         <div
           className={clsx(
-            "flex shrink-0 items-center gap-0.5 transition-opacity",
+            "flex shrink-0 items-center gap-0.5 transition-opacity duration-150",
             isLooping
               ? "opacity-100"
               : "opacity-0 focus-within:opacity-100 group-hover:opacity-100",

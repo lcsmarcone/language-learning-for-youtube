@@ -33,6 +33,16 @@ export function Modal({
 
     if (open && !dialog.open) {
       dialog.showModal();
+
+      // `showModal()` move o foco para o primeiro elemento focável — que
+      // costuma ser o botão de fechar. Quem abriu o diálogo quer digitar, não
+      // fechá-lo, então devolvemos o foco ao campo marcado.
+      //
+      // A marca é `data-autofocus`, e não o `autoFocus` do React: o React
+      // trata `autoFocus` chamando `.focus()` na montagem e **não** escreve o
+      // atributo no HTML, então não há como encontrá-lo pelo seletor — e o
+      // foco dele acontece antes de `showModal()`, que em seguida o rouba.
+      dialog.querySelector<HTMLElement>("[data-autofocus]")?.focus();
     } else if (!open && dialog.open) {
       dialog.close();
     }

@@ -48,7 +48,14 @@ export function LibraryView({ videos }: { videos: LibraryVideo[] }) {
         </div>
       )}
 
-      <AddVideoDialog open={dialogOpen} onClose={() => setDialogOpen(false)} />
+      {/* A `key` amarrada ao estado de aberto remonta o formulário a cada
+          abertura. É o que garante que uma tentativa anterior não deixe
+          resíduo — sem um efeito de limpeza sincronizando estado à mão. */}
+      <AddVideoDialog
+        key={dialogOpen ? "aberto" : "fechado"}
+        open={dialogOpen}
+        onClose={() => setDialogOpen(false)}
+      />
     </>
   );
 }

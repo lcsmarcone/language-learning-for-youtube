@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, Clock3, Keyboard } from "lucide-react";
+import { ArrowLeft, Keyboard } from "lucide-react";
 import type { StudySegment } from "@/lib/domain";
 import type { StudyVideo } from "@/services/study";
 import { usePlayerStore } from "@/lib/playerStore";
@@ -277,41 +277,42 @@ export function StudyScreen({
         </span>
       </header>
 
-      <div className="grid min-h-0 flex-1 grid-cols-1 lg:grid-cols-[minmax(0,1.15fr)_minmax(22rem,0.85fr)]">
-        <section className="flex min-w-0 flex-col justify-center gap-5 border-border p-6 lg:border-r">
-          {video.externalId ? (
-            <YouTubePlayer
-              ref={playerRef}
-              videoId={video.externalId}
-              startAtMs={startAtMs ?? video.lastPositionMs}
-              onDurationKnown={(durationSec) => {
-                durationSecRef.current = durationSec;
-              }}
+      {/* Vídeo em cima, texto embaixo — o formato de uma página de leitura
+          bilíngue, e não de um painel dividido ao meio. A coluna larga é o que
+          permite marcar um trecho que atravessa várias frases sem que o texto
+          vire uma tira estreita. O vídeo fica fixo no topo: some da vista e o
+          estudo perde a referência. */}
+      <div className="flex min-h-0 flex-1 flex-col">
+        <section className="flex shrink-0 flex-col items-center gap-3 border-b border-border px-6 pb-3 pt-5">
+          <div className="w-full max-w-[42rem]">
+            {video.externalId ? (
+              <YouTubePlayer
+                ref={playerRef}
+                videoId={video.externalId}
+                startAtMs={startAtMs ?? video.lastPositionMs}
+                onDurationKnown={(durationSec) => {
+                  durationSecRef.current = durationSec;
+                }}
+              />
+            ) : (
+              <div className="flex aspect-video items-center justify-center rounded-lg border border-border bg-bg-subtle text-sm text-fg-muted">
+                Este vídeo não tem uma fonte reproduzível.
+              </div>
+            )}
+          </div>
+
+          <div className="w-full max-w-[42rem]">
+            <PlayerControls
+              onTogglePlay={() => playerRef.current?.togglePlay()}
+              onNudge={(delta) => playerRef.current?.nudgeMs(delta)}
+              onRateChange={handleRateChange}
+              onRepeatCurrent={handleRepeatCurrent}
             />
-          ) : (
-            <div className="flex aspect-video items-center justify-center rounded-lg border border-border bg-bg-subtle text-sm text-fg-muted">
-              Este vídeo não tem uma fonte reproduzível.
-            </div>
-          )}
-
-          <PlayerControls
-            onTogglePlay={() => playerRef.current?.togglePlay()}
-            onNudge={(delta) => playerRef.current?.nudgeMs(delta)}
-            onRateChange={handleRateChange}
-            onRepeatCurrent={handleRepeatCurrent}
-          />
-
-          {video.timingsApproximate ? (
-            <p className="flex items-start gap-2 rounded-md border border-border bg-bg-subtle px-3 py-2 text-xs leading-relaxed text-fg-muted">
-              <Clock3 size={13} strokeWidth={1.75} className="mt-0.5 shrink-0" />
-              Os tempos desta legenda foram estimados a partir do texto, então a
-              sincronia é aproximada.
-            </p>
-          ) : null}
+          </div>
         </section>
 
-        <section className="flex min-h-0 min-w-0 flex-col">
-          <div className="flex h-12 shrink-0 items-center justify-between gap-3 border-b border-border px-5">
+        <section className="flex min-h-0 min-w-0 flex-1 flex-col">
+          <div className="flex h-11 shrink-0 items-center justify-between gap-3 border-b border-border px-6">
             <span className="text-xs text-fg-subtle">
               {video.segments.length}{" "}
               {video.segments.length === 1 ? "frase" : "frases"}
@@ -320,6 +321,7 @@ export function StudyScreen({
                   ? ", nenhuma traduzida"
                   : `, ${untranslated} sem tradução`
                 : ""}
+              {video.timingsApproximate ? ", sincronia aproximada" : ""}
             </span>
 
             <label className="flex cursor-pointer select-none items-center gap-1.5 text-xs text-fg-muted">

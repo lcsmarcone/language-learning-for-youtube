@@ -37,6 +37,10 @@ export default function GlobalError({
         <Button variant="primary" onClick={reset}>
           Tentar de novo
         </Button>
+        {/* Âncora comum, e não <Link>, de propósito: depois de um erro não
+            tratado o roteador do cliente pode estar em estado inconsistente,
+            e uma navegação completa é a recuperação mais confiável. */}
+        {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
         <a
           href="/"
           className="inline-flex h-9 items-center rounded-md px-4 text-sm text-fg-muted transition-colors hover:bg-bg-hover hover:text-fg"

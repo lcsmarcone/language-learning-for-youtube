@@ -42,6 +42,10 @@ export function TranscriptList({
   const setFollowVideo = usePlayerStore((state) => state.setFollowVideo);
   const setScrolledAway = usePlayerStore((state) => state.setScrolledAway);
 
+  // O React Compiler avisa que não consegue memoizar este componente por causa
+  // do virtualizador, e está certo. Não é problema aqui: quem repinta a cada
+  // frase é o `SegmentRow`, e ele é memoizado por conta própria — este
+  // componente só posiciona as linhas.
   const virtualizer = useVirtualizer({
     count: segments.length,
     getScrollElement: () => scrollRef.current,

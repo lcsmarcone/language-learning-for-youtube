@@ -57,19 +57,6 @@ export function AddVideoDialog({ open, onClose }: AddVideoDialogProps) {
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Limpa tudo ao reabrir, para não herdar o estado de uma tentativa anterior.
-  useEffect(() => {
-    if (open) return;
-    setUrl("");
-    setSubtitleContent("");
-    setPastedText("");
-    setFilename(null);
-    setMetadata(null);
-    setMetadataError(null);
-    setError(null);
-    setDetected(null);
-  }, [open]);
-
   // Só perguntamos se o yt-dlp existe quando o diálogo abre: é uma checagem
   // barata, mas não faz sentido rodá-la enquanto ninguém vai adicionar vídeo.
   useEffect(() => {
@@ -85,11 +72,6 @@ export function AddVideoDialog({ open, onClose }: AddVideoDialogProps) {
       }
     })();
   }, [open, detectAvailable]);
-
-  // Trocar de vídeo invalida a legenda já detectada.
-  useEffect(() => {
-    setDetected(null);
-  }, [url, sourceLang]);
 
   async function handleDetect() {
     if (url.trim().length === 0) {
@@ -124,11 +106,7 @@ export function AddVideoDialog({ open, onClose }: AddVideoDialogProps) {
 
   // Prévia do vídeo. O debounce evita uma consulta por tecla digitada.
   useEffect(() => {
-    if (!open || url.trim().length < 8) {
-      setMetadata(null);
-      setMetadataError(null);
-      return;
-    }
+    if (url.trim().length < 8) return;
 
     const controller = new AbortController();
     const timer = setTimeout(async () => {
@@ -249,9 +227,16 @@ export function AddVideoDialog({ open, onClose }: AddVideoDialogProps) {
           <input
             type="url"
             inputMode="url"
-            autoFocus
+            data-autofocus
             value={url}
-            onChange={(event) => setUrl(event.target.value)}
+            onChange={(event) => {
+              setUrl(event.target.value);
+              // Outro vídeo, outra legenda: o que foi detectado antes não vale
+              // mais.
+              setDetected(null);
+              setMetadata(null);
+              setMetadataError(null);
+            }}
             placeholder="https://www.youtube.com/watch?v=..."
             className="h-9 w-full rounded-md border border-border bg-bg px-3 text-sm text-fg placeholder:text-fg-subtle"
           />
@@ -268,7 +253,10 @@ export function AddVideoDialog({ open, onClose }: AddVideoDialogProps) {
               <button
                 key={lang}
                 type="button"
-                onClick={() => setSourceLang(lang)}
+                onClick={() => {
+                  setSourceLang(lang);
+                  setDetected(null);
+                }}
                 aria-pressed={sourceLang === lang}
                 className={
                   sourceLang === lang

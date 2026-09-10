@@ -4,8 +4,8 @@
 > Leia-o antes de qualquer coisa, continue da primeira etapa não ✅, e atualize-o ao final de cada etapa.
 > Legenda: ⬜ pendente · 🔨 em andamento · ✅ concluída
 
-**Última sessão:** 2026-09-10 — Etapas 0 a 10 concluídas.
-**Próximo passo:** Etapa 11 — Validação final e README.
+**Última sessão:** 2026-09-10 — **Todas as 12 etapas concluídas.** O produto está funcional de ponta a ponta.
+**Próximo passo:** nenhum planejado. O que vier agora é evolução (ver "Preparado para depois" no README) ou ajuste vindo do uso real.
 
 ---
 
@@ -160,11 +160,18 @@
 
 **Nota:** o yt-dlp instalado nesta máquina (2025.07.21) não abre alguns vídeos que o YouTube passou a restringir — inclusive o vídeo de exemplo do seed. `yt-dlp -U` resolve, e a mensagem na tela diz isso.
 
-### ⬜ Etapa 11 — Validação final e documentação
-- [ ] Suíte completa passando
-- [ ] 15 passos do §25 e 13 do "Critério de validação adicional", nos três idiomas (en/fr/es → pt-BR)
-- [ ] `README.md`: instalar, configurar `.env`, rodar, migrar, exportar para o Anki, evoluções preparadas
-- [ ] Marcar este arquivo como concluído
+### ✅ Etapa 11 — Validação final e documentação
+- [x] 151 testes passando, `typecheck` limpo, `build` limpo, **lint sem erros**
+- [x] Roteiro do §25 percorrido de ponta a ponta no navegador com vídeo real em espanhol: adicionar → detectar legenda com yt-dlp (faixa oficial `es-419`, 59 blocos) → traduzir (59/59) → clicar numa frase e o player ir até ela → selecionar e ver a tradução destacada → criar flashcard → ver na área de flashcards → recarregar e retomar em 01:44 com tudo salvo
+- [x] **Loop verificado com vídeo tocando de verdade** pela primeira vez: tempo indo 105,4 s → 106,1 s → voltando a 104,2 s, dentro do trecho [104,2 s – 106,3 s]
+- [x] Atalhos conferidos na tela: `?` abre a ajuda, `Esc` fecha, `↓` avança de frase, `R` liga o loop
+- [x] `README.md` completo: instalar, `.env`, rodar, importar no Anki, atalhos, decisões de projeto, evoluções preparadas e limitações conhecidas
+
+**Correções de qualidade feitas nesta etapa:**
+- Seis erros de lint do React Compiler: `setState` dentro de efeito em `ThemeToggle`, `OfflineBanner` e `AddVideoDialog`. Os dois primeiros passaram a usar `useSyncExternalStore` — a ferramenta certa para estado que vive fora do React (preferência de tema, estado da conexão). No diálogo, o efeito de limpeza foi substituído por uma `key` que remonta o formulário a cada abertura.
+- **Bug de usabilidade real encontrado no navegador:** ao abrir "Adicionar vídeo", o foco ia para o botão de fechar em vez do campo de URL — dava para abrir o diálogo e digitar no vazio. A causa: o React trata `autoFocus` chamando `.focus()` na montagem e **não** escreve o atributo no HTML, e o `showModal()` rouba o foco logo depois. Resolvido com uma marca explícita `data-autofocus` que o `Modal` procura depois de abrir.
+
+**Só você pode verificar:** importar o `.tsv` exportado no Anki de verdade.
 
 ---
 

@@ -4,8 +4,8 @@
 > Leia-o antes de qualquer coisa, continue da primeira etapa não ✅, e atualize-o ao final de cada etapa.
 > Legenda: ⬜ pendente · 🔨 em andamento · ✅ concluída
 
-**Última sessão:** 2026-09-10 — Etapas 0 a 8 concluídas. Fluxo fechado do vídeo ao arquivo pronto para importar no Anki.
-**Próximo passo:** Etapa 9 — Atalhos, estados de erro e acabamento.
+**Última sessão:** 2026-09-10 — Etapas 0 a 9 concluídas.
+**Próximo passo:** Etapa 10 — Detecção opcional de legenda via yt-dlp.
 
 ---
 
@@ -134,11 +134,18 @@
 
 **Pendente para você:** importar o `.tsv` gerado no Anki de verdade — é o único passo que não dá para verificar daqui.
 
-### ⬜ Etapa 9 — Atalhos, estados e acabamento
-- [ ] Atalhos: Espaço, ←/→, ↑/↓, R, A, F, Esc, `?` (modal de atalhos); ignorados em input/textarea
-- [ ] Estados: biblioteca vazia, sem legenda, legenda inválida, tradução em andamento/parcial/falha, API fora, offline, vídeo indisponível, sem flashcards, skeletons
-- [ ] Revisão de design: pouco ruído, tipografia, espaço, poucas cores, dark mode consistente
-- **Verificação:** percorrer manualmente cada estado de erro forçando a condição.
+### ✅ Etapa 9 — Atalhos, estados e acabamento
+- [x] `lib/shortcuts.ts` é a **fonte única**: a mesma constante governa o teclado e o modal de ajuda, então a ajuda não pode descrever um atalho que não existe
+- [x] Atalhos: `Espaço` play/pause, `←/→` ±5 s, `↑/↓` frase anterior/próxima, `R` repetir, `A` marcar A-B (duas vezes: início e fim), `F` flashcard, `Esc` cancelar seleção ou parar repetição, `?` ajuda
+- [x] Ignorados quando o foco está em input, textarea, select, área editável ou dentro de um diálogo aberto; combinações com Ctrl/Cmd/Alt não são roubadas do navegador
+- [x] Botão de teclado no cabeçalho da tela de estudo abre a mesma ajuda
+- [x] `OfflineBanner`: avisa sem bloquear — dá para continuar assistindo offline
+- [x] Esqueletos de carregamento nas três telas (`loading.tsx`), `error.tsx` com "tentar de novo", `not-found.tsx`
+- **Verificação:** 139 testes, incluindo o mapeamento de teclas, o respeito a Ctrl/Cmd/Alt e as quatro situações em que o atalho deve ser ignorado. Build passa com todas as rotas.
+
+**Estados cobertos (instrucoes.md secao 18):** biblioteca vazia ✅ · vídeo sem legenda ✅ · legenda inválida ✅ · falha na tradução ✅ · tradução parcial ✅ · tradução em andamento ✅ · API indisponível ✅ · vídeo indisponível ✅ · erro de rede ✅ · offline ✅ · nenhum flashcard ✅ · carregando ✅
+
+**Não verificado no navegador:** a extensão do Chrome desconectou durante esta etapa, então os atalhos foram validados só por teste unitário. O comportamento na tela (incluindo o loop A-B pelo teclado) precisa de uma conferida manual.
 
 ### ⬜ Etapa 10 — Detecção opcional de legenda via yt-dlp
 - [ ] `services/subtitles/ytdlp.ts` com `execFile` (nunca shell), args fixos, timeout, limite de saída

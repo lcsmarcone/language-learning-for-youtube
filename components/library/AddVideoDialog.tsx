@@ -2,13 +2,13 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { AlertCircle, Loader2, Upload } from "lucide-react";
+import { AlertCircle, Download, Loader2, Upload } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
 import { LANGUAGE_LABELS, SOURCE_LANGUAGES, type SourceLanguage } from "@/lib/domain";
 import { MAX_BODY_BYTES } from "@/lib/api";
 
-type SubtitleMode = "file" | "paste";
+type SubtitleMode = "file" | "paste" | "detect";
 
 interface Metadata {
   title: string;
@@ -45,6 +45,16 @@ export function AddVideoDialog({ open, onClose }: AddVideoDialogProps) {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Detecção automática via yt-dlp (etapa 10). `null` = ainda consultando.
+  const [detectAvailable, setDetectAvailable] = useState<boolean | null>(null);
+  const [detecting, setDetecting] = useState(false);
+  const [detected, setDetected] = useState<{
+    content: string;
+    lang: string;
+    automatic: boolean;
+    segmentCount: number;
+  } | null>(null);
+
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Limpa tudo ao reabrir, para não herdar o estado de uma tentativa anterior.
@@ -57,7 +67,60 @@ export function AddVideoDialog({ open, onClose }: AddVideoDialogProps) {
     setMetadata(null);
     setMetadataError(null);
     setError(null);
+    setDetected(null);
   }, [open]);
+
+  // Só perguntamos se o yt-dlp existe quando o diálogo abre: é uma checagem
+  // barata, mas não faz sentido rodá-la enquanto ninguém vai adicionar vídeo.
+  useEffect(() => {
+    if (!open || detectAvailable !== null) return;
+
+    void (async () => {
+      try {
+        const response = await fetch("/api/youtube/subtitles");
+        const payload = await response.json();
+        setDetectAvailable(payload.ok ? payload.data.available : false);
+      } catch {
+        setDetectAvailable(false);
+      }
+    })();
+  }, [open, detectAvailable]);
+
+  // Trocar de vídeo invalida a legenda já detectada.
+  useEffect(() => {
+    setDetected(null);
+  }, [url, sourceLang]);
+
+  async function handleDetect() {
+    if (url.trim().length === 0) {
+      setError("Cole o endereço do vídeo antes de detectar a legenda.");
+      return;
+    }
+
+    setDetecting(true);
+    setError(null);
+    setDetected(null);
+
+    try {
+      const response = await fetch("/api/youtube/subtitles", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url: url.trim(), lang: sourceLang }),
+      });
+      const payload = await response.json();
+
+      if (!payload.ok) {
+        setError(payload.error);
+        return;
+      }
+
+      setDetected(payload.data);
+    } catch {
+      setError("Não foi possível buscar a legenda agora.");
+    } finally {
+      setDetecting(false);
+    }
+  }
 
   // Prévia do vídeo. O debounce evita uma consulta por tecla digitada.
   useEffect(() => {
@@ -119,12 +182,20 @@ export function AddVideoDialog({ open, onClose }: AddVideoDialogProps) {
     event.preventDefault();
     setError(null);
 
-    const content = mode === "file" ? subtitleContent : pastedText;
+    const content =
+      mode === "file"
+        ? subtitleContent
+        : mode === "paste"
+          ? pastedText
+          : (detected?.content ?? "");
+
     if (content.trim().length === 0) {
       setError(
         mode === "file"
           ? "Escolha o arquivo de legenda."
-          : "Cole a transcrição do vídeo.",
+          : mode === "paste"
+            ? "Cole a transcrição do vídeo."
+            : "Clique em “Buscar legenda” antes de continuar.",
       );
       return;
     }
@@ -141,7 +212,12 @@ export function AddVideoDialog({ open, onClose }: AddVideoDialogProps) {
           title: metadata?.title ?? null,
           subtitle: {
             content,
-            filename: mode === "file" ? filename : null,
+            filename:
+              mode === "file"
+                ? filename
+                : mode === "detect"
+                  ? "legenda.vtt"
+                  : null,
           },
         }),
       });
@@ -221,12 +297,20 @@ export function AddVideoDialog({ open, onClose }: AddVideoDialogProps) {
               onClick={() => setMode("paste")}
               label="Colar transcrição"
             />
-            <span
-              title="Chega em uma etapa futura, com yt-dlp instalado na sua máquina."
-              className="inline-flex h-8 cursor-not-allowed items-center rounded-md border border-dashed border-border px-3 text-xs text-fg-subtle"
-            >
-              Detectar automaticamente
-            </span>
+            {detectAvailable === false ? (
+              <span
+                title="Instale o yt-dlp na sua máquina para habilitar esta opção."
+                className="inline-flex h-8 cursor-not-allowed items-center rounded-md border border-dashed border-border px-3 text-xs text-fg-subtle"
+              >
+                Detectar automaticamente
+              </span>
+            ) : (
+              <ModeButton
+                active={mode === "detect"}
+                onClick={() => setMode("detect")}
+                label="Detectar automaticamente"
+              />
+            )}
           </div>
 
           {mode === "file" ? (
@@ -248,6 +332,42 @@ export function AddVideoDialog({ open, onClose }: AddVideoDialogProps) {
               <p className="mt-2 text-xs text-fg-subtle">
                 Até 2 MB. Aceitamos também .txt com uma transcrição dentro.
               </p>
+            </div>
+          ) : mode === "detect" ? (
+            <div className="mt-3">
+              <Button
+                onClick={handleDetect}
+                disabled={detecting}
+                className="w-full justify-start"
+              >
+                {detecting ? (
+                  <>
+                    <Loader2 size={14} className="animate-spin" strokeWidth={2} />
+                    Buscando legenda no YouTube…
+                  </>
+                ) : (
+                  <>
+                    <Download size={14} strokeWidth={1.75} />
+                    {detected ? "Buscar de novo" : "Buscar legenda"}
+                  </>
+                )}
+              </Button>
+
+              {detected ? (
+                <p className="mt-2 text-xs leading-relaxed text-fg-muted">
+                  {detected.segmentCount} blocos encontrados na faixa
+                  <span className="font-mono"> {detected.lang}</span>
+                  {detected.automatic
+                    ? " — é uma legenda automática, então pode ter erros de transcrição."
+                    : " — legenda oficial do vídeo."}
+                </p>
+              ) : (
+                <p className="mt-2 text-xs leading-relaxed text-fg-subtle">
+                  Usa o yt-dlp instalado na sua máquina para baixar a legenda
+                  publicada pelo próprio vídeo. Preferimos a legenda oficial; se
+                  não houver, usamos a automática.
+                </p>
+              )}
             </div>
           ) : (
             <div className="mt-3">

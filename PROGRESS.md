@@ -4,8 +4,8 @@
 > Leia-o antes de qualquer coisa, continue da primeira etapa não ✅, e atualize-o ao final de cada etapa.
 > Legenda: ⬜ pendente · 🔨 em andamento · ✅ concluída
 
-**Última sessão:** 2026-09-10 — Etapas 0 a 9 concluídas.
-**Próximo passo:** Etapa 10 — Detecção opcional de legenda via yt-dlp.
+**Última sessão:** 2026-09-10 — Etapas 0 a 10 concluídas.
+**Próximo passo:** Etapa 11 — Validação final e README.
 
 ---
 
@@ -147,10 +147,18 @@
 
 **Não verificado no navegador:** a extensão do Chrome desconectou durante esta etapa, então os atalhos foram validados só por teste unitário. O comportamento na tela (incluindo o loop A-B pelo teclado) precisa de uma conferida manual.
 
-### ⬜ Etapa 10 — Detecção opcional de legenda via yt-dlp
-- [ ] `services/subtitles/ytdlp.ts` com `execFile` (nunca shell), args fixos, timeout, limite de saída
-- [ ] Detecção do binário (`YTDLP_PATH` ou PATH); degradação limpa quando ausente
-- **Verificação:** importar legenda de um vídeo com yt-dlp; sem ele, UI desabilita com explicação.
+### ✅ Etapa 10 — Detecção opcional de legenda via yt-dlp
+- [x] `services/subtitles/ytdlp.ts` com `execFile` (nunca shell), argumentos fixos, timeout e limite de saída; a URL é construída a partir do id extraído, então o texto digitado nunca chega à linha de comando
+- [x] Detecção do binário por `YTDLP_PATH` ou PATH, com cache no processo; ausente = a opção some da interface com explicação, e o caminho manual segue como principal
+- [x] **Duas etapas**: consulta as faixas disponíveis (`--dump-single-json`) e baixa exatamente uma
+- [x] Preferência de faixa: oficial no idioma exato → oficial em variante regional → automática no idioma → automática `-orig` (o áudio original quando há dublagem). Faixas traduzidas por máquina a partir de outro idioma são recusadas — para quem aprende, elas não correspondem ao que se ouve
+- [x] `GET/POST /api/youtube/subtitles`; a UI mostra quantos blocos vieram e avisa quando a legenda é automática
+- [x] Mensagens acionáveis para os erros reais: yt-dlp desatualizado (`yt-dlp -U`), limite 429, vídeo privado, vídeo indisponível, sem conexão
+- **Verificação com yt-dlp real (2025.07.21) instalado:** baixou a faixa oficial `en` de um vídeo real (60 blocos) e o fluxo detectar→criar vídeo funcionou de ponta a ponta. Os erros de "versão desatualizada" e "429" foram vistos de verdade e produzem as mensagens certas. 151 testes.
+
+**Descoberto testando:** a primeira versão pedia as faixas por padrão de idioma (`en.*`) numa chamada só. Parecia mais simples, mas o YouTube devolve também as faixas traduzidas automaticamente de outros idiomas — quatro downloads onde bastava um, risco de escolher uma tradução de máquina em vez da original, e erro 429 por excesso de requisições, que abortava a execução inteira mesmo com o arquivo certo já baixado.
+
+**Nota:** o yt-dlp instalado nesta máquina (2025.07.21) não abre alguns vídeos que o YouTube passou a restringir — inclusive o vídeo de exemplo do seed. `yt-dlp -U` resolve, e a mensagem na tela diz isso.
 
 ### ⬜ Etapa 11 — Validação final e documentação
 - [ ] Suíte completa passando
